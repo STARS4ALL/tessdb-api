@@ -282,8 +282,9 @@ async def photometer_batch_write(
     else:
         try:
             await session.commit()
-        except Exception:
-            log.warning("SQL Integrity error in block write. Looping one by one ...")
+        except Exception as e:
+            e = str(e).split("\n")[0]
+            log.error("%s. Looping one by one.", e)
             await session.rollback()
             await session.close()
             await _photometer_looped_write(session, objs, items)
