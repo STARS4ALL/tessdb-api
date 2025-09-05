@@ -119,7 +119,7 @@ def find_photometer_by_name(
             )
         )
     result = session.scalars(query).one_or_none()
-    if result and mac_hash and mac_hash != "".join(result.mac_address.split(":"))[-3:-1]:
+    if result and mac_hash and mac_hash != "".join(result.mac_address.split(":"))[-3:]:
         raise HashMismatchError(mac_hash, result.mac_address)
     return result
 

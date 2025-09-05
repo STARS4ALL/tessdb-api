@@ -90,6 +90,33 @@ def stars1r1(request) -> ReadingInfo:
         signal_strength=-78,
     )
 
+@pytest.fixture()
+def stars1r1_wrong_hash(request) -> ReadingInfo:
+    return ReadingInfo(
+        tstamp=datetime(2025, 9, 4, 12, 34, 56, tzinfo=timezone.utc),
+        name="stars1",
+        sequence_number=1,
+        frequency=10,
+        magnitude=23.4,
+        box_temperature=12,
+        sky_temperature=-12,
+        signal_strength=-78,
+        hash="ABC"
+    )
+
+@pytest.fixture()
+def stars1r1_good_hash(request) -> ReadingInfo:
+    return ReadingInfo(
+        tstamp=datetime(2025, 9, 4, 12, 34, 56, tzinfo=timezone.utc),
+        name="stars1",
+        sequence_number=1,
+        frequency=10,
+        magnitude=23.4,
+        box_temperature=12,
+        sky_temperature=-12,
+        signal_strength=-78,
+        hash="95A"
+    )
 
 @pytest.fixture()
 def stars100r1(request) -> ReadingInfo:
@@ -313,6 +340,27 @@ def test_reading_nonexists(database, stars8000r1):
         )
         assert ref is None
 
+def test_reading_wrong_hash(database, stars1r1_wrong_hash):
+    with database.begin():
+        ref = resolve_references(
+            session=database,
+            reading=stars1r1_wrong_hash,
+            auth_filter=False,
+            latest=False,
+            units_choice=UnitsChoice.LOGFILE,
+        )
+        assert ref is None
+
+def test_reading_good_hash(database, stars1r1_good_hash):
+    with database.begin():
+        ref = resolve_references(
+            session=database,
+            reading=stars1r1_good_hash,
+            auth_filter=False,
+            latest=False,
+            units_choice=UnitsChoice.LOGFILE,
+        )
+        assert ref is not None
 
 def test_reading_authorization(database, stars100r1, stars1r1):
     with database.begin():
