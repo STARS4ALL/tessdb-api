@@ -11,7 +11,6 @@
 import logging
 from datetime import datetime
 from typing import Optional, Tuple, Iterable, Sequence, List, Callable, Union
-from functools import lru_cache
 
 # -------------------
 # Third party imports
@@ -29,13 +28,13 @@ from tessdbdao import (
 )
 
 
-from tessdbdao.noasync import Units, NameMapping, Tess, Tess4cReadings, TessReadings
+from tessdbdao.asyncio import Units, NameMapping, Tess, Tess4cReadings, TessReadings
 
 # --------------
 # local imports
 # -------------
 
-from ...util import Session
+from ...util import Session, async_lru_cache
 from ...model import UnitsChoice, ReferencesInfo, ReadingInfo, ReadingInfo4c
 
 # ----------------
@@ -69,8 +68,8 @@ class HashMismatchError(RuntimeError):
     pass
 
 
-@lru_cache(maxsize=10)
-def resolve_units_id(session: Session, choice: UnitsChoice) -> int:
+@async_lru_cache(maxsize=10)
+async def resolve_units_id(session: Session, choice: UnitsChoice) -> int:
     """For readings recovery/batch uploads"""
     if choice == UnitsChoice.GRAFANA:
         target_timestamp_source = TimestampSource.PUBLISHER
@@ -85,10 +84,10 @@ def resolve_units_id(session: Session, choice: UnitsChoice) -> int:
         Units.timestamp_source == target_timestamp_source,
         Units.reading_source == target_reading_source,
     )
-    return session.scalars(query).one()
+    return (await session.scalars(query)).one()
 
 
-def find_photometer_by_name(
+async def find_photometer_by_name(
     session: Session, name: str, mac_hash: str, tstamp: datetime, latest: bool
 ) -> Optional[Tess]:
     if latest:
@@ -118,13 +117,13 @@ def find_photometer_by_name(
                 Tess.valid_state == ValidState.CURRENT,
             )
         )
-    result = session.scalars(query).one_or_none()
+    result = (await session.scalars(query)).one_or_none()
     if result and mac_hash and mac_hash != "".join(result.mac_address.split(":"))[-3:-1]:
         raise HashMismatchError(mac_hash, result.mac_address)
     return result
 
 
-def resolve_references(
+async def resolve_references(
     session: Session,
     reading: ReadingInfo,
     auth_filter: bool,
@@ -132,9 +131,11 @@ def resolve_references(
     units_choice: UnitsChoice,
 ) -> Optional[ReferencesInfo]:
     pub.sendMessage("nreadings")
-    units_id = resolve_units_id(session, units_choice)
+    units_id = await resolve_units_id(session, units_choice)
     try:
-        phot = find_photometer_by_name(session, reading.name, reading.hash, reading.tstamp, latest)
+        phot = await find_photometer_by_name(
+            session, reading.name, reading.hash, reading.tstamp, latest
+        )
         if phot is None:
             pub.sendMessage("rejNotRegistered")
             log.warning(
@@ -163,7 +164,7 @@ def resolve_references(
         )
 
 
-def resolve_references_seq(
+async def resolve_references_seq(
     session: Session,
     readings: Sequence[ReadingInfo],
     auth_filter: bool,
@@ -171,7 +172,7 @@ def resolve_references_seq(
     units_choice: UnitsChoice,
 ) -> List[Optional[ReferencesInfo]]:
     return [
-        resolve_references(session, reading, auth_filter, latest, units_choice)
+        await resolve_references(session, reading, auth_filter, latest, units_choice)
         for reading in readings
     ]
 
@@ -234,20 +235,20 @@ def tess4c_new(
     )
 
 
-def _photometer_looped_write(
+async def _photometer_looped_write(
     session: Session,
     dbobjs: Iterable[PhotReadings],
     items: Sequence[Tuple[ReadingInfo, ReferencesInfo]],
 ):
     """One by one commit of database records"""
     for i, dbobj in enumerate(dbobjs):
-        with session.begin():
+        async with session.begin():
             session.add(dbobj)
             try:
-                session.commit()
+                await session.commit()
             except Exception:
                 log.warning("Discarding reading by SQL Integrity error: %s", dict(items[i][0]))
-                session.rollback()
+                await session.rollback()
 
 
 # ==================
@@ -255,7 +256,7 @@ def _photometer_looped_write(
 # ==================
 
 
-def photometer_batch_write(
+async def photometer_batch_write(
     session: Session,
     readings: Iterable[ReadingInfo],
     factory_func: Callable[[ReadingInfo, ReferencesInfo], PhotReadings],
@@ -264,8 +265,8 @@ def photometer_batch_write(
     units_choice: UnitsChoice,
     dry_run: Optional[bool],
 ) -> None:
-    session.begin()
-    references = resolve_references_seq(
+    await session.begin()
+    references = await resolve_references_seq(
         session,
         readings,
         auth_filter,
@@ -277,21 +278,20 @@ def photometer_batch_write(
     session.add_all(objs)
     if dry_run:
         log.warning("Dry run mode. Database not written")
-        session.rollback()
+        await session.rollback()
     else:
         try:
-            session.commit()
+            await session.commit()
         except Exception:
-            # log.error(e)
             log.warning("SQL Integrity error in block write. Looping one by one ...")
-            session.rollback()
-            session.close()
-            _photometer_looped_write(session, objs, items)
+            await session.rollback()
+            await session.close()
+            await _photometer_looped_write(session, objs, items)
         else:
-            session.close()
+            await session.close()
 
 
-def tess_batch_write(
+async def tess_batch_write(
     session: Session,
     readings: Sequence[ReadingInfo],
     auth_filter: bool = False,
@@ -299,10 +299,12 @@ def tess_batch_write(
     units_choice: UnitsChoice = UnitsChoice.MQTT,
     dry_run: Optional[bool] = False,
 ) -> None:
-    photometer_batch_write(session, readings, tess_new, auth_filter, latest, units_choice, dry_run)
+    await photometer_batch_write(
+        session, readings, tess_new, auth_filter, latest, units_choice, dry_run
+    )
 
 
-def tess4c_batch_write(
+async def tess4c_batch_write(
     session: Session,
     readings: Sequence[ReadingInfo],
     auth_filter: bool = False,
@@ -310,6 +312,6 @@ def tess4c_batch_write(
     units_choice: UnitsChoice = UnitsChoice.MQTT,
     dry_run: Optional[bool] = False,
 ) -> None:
-    photometer_batch_write(
+    await photometer_batch_write(
         session, readings, tess4c_new, auth_filter, latest, units_choice, dry_run
     )
