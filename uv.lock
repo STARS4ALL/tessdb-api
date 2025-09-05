@@ -499,7 +499,7 @@ wheels = [
 
 [[package]]
 name = "pytest"
-version = "8.4.1"
+version = "8.4.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorama", marker = "sys_platform == 'win32'" },
@@ -508,9 +508,9 @@ dependencies = [
     { name = "pluggy" },
     { name = "pygments" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/08/ba/45911d754e8eba3d5a841a5ce61a65a685ff1798421ac054f85aa8747dfb/pytest-8.4.1.tar.gz", hash = "sha256:7c67fd69174877359ed9371ec3af8a3d2b04741818c51e5e99cc1742251fa93c", size = 1517714, upload-time = "2025-06-18T05:48:06.109Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a3/5c/00a0e072241553e1a7496d638deababa67c5058571567b92a7eaa258397c/pytest-8.4.2.tar.gz", hash = "sha256:86c0d0b93306b961d58d62a4db4879f27fe25513d4b969df351abdddb3c30e01", size = 1519618, upload-time = "2025-09-04T14:34:22.711Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/29/16/c8a903f4c4dffe7a12843191437d7cd8e32751d5de349d45d3fe69544e87/pytest-8.4.1-py3-none-any.whl", hash = "sha256:539c70ba6fcead8e78eebbf1115e8b589e7565830d7d006a8723f19ac8a0afb7", size = 365474, upload-time = "2025-06-18T05:48:03.955Z" },
+    { url = "https://files.pythonhosted.org/packages/a8/a4/20da314d277121d6534b3a980b29035dcd51e6744bd79075a6ce8fa4eb8d/pytest-8.4.2-py3-none-any.whl", hash = "sha256:872f880de3fc3a5bdc88a11b39c9710c3497a547cfa9320bc3c5e62fbf272e79", size = 365750, upload-time = "2025-09-04T14:34:20.226Z" },
 ]
 
 [[package]]
@@ -639,7 +639,7 @@ requires-dist = [
     { name = "pytz" },
     { name = "requests" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0" },
-    { name = "tessdb-dao", specifier = ">=0.2" },
+    { name = "tessdb-dao", specifier = ">=0.3" },
     { name = "timezonefinder" },
 ]
 provides-extras = ["test"]
@@ -652,7 +652,7 @@ dev = [
 
 [[package]]
 name = "tessdb-dao"
-version = "0.2.0"
+version = "0.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiosqlite" },
@@ -660,9 +660,9 @@ dependencies = [
     { name = "lica", extra = ["aiosqlalchemy"] },
     { name = "sqlalchemy", extra = ["asyncio"] },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1f/25/6f0c1e168f7aa4b6f532200f46702ec6b4bc7cfed50648db20e38630e131/tessdb_dao-0.2.0.tar.gz", hash = "sha256:0737e1ce3393e4b20f34553773c1bbb0a190a42d5ae9d9b4eca7f8a5d379f88d", size = 28614, upload-time = "2025-09-03T22:14:00.826Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c3/2c/1ab0bfae61aa878809a6d83b2824dd7b0e25ed7e0f384c9f40057bbd0912/tessdb_dao-0.3.0.tar.gz", hash = "sha256:8cd3f255c72725e42e697fe5e2bda4655a350c159c6b7a01494b467bd9a511c6", size = 27202, upload-time = "2025-09-05T10:41:45.538Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/02/1c/18e0a472ae4751e1b97dec150dd649679ef962188e14a741418b780b976e/tessdb_dao-0.2.0-py3-none-any.whl", hash = "sha256:bf26bf4a8c8a50ffb45419a17921f58ddb01e7a8305e603d13099f7c78b4a82c", size = 17987, upload-time = "2025-09-03T22:13:59.409Z" },
+    { url = "https://files.pythonhosted.org/packages/e6/f1/279c14f8ed5bc81ad66cc5b074e075719bcb721bf553b7f79ab9c1e12a0f/tessdb_dao-0.3.0-py3-none-any.whl", hash = "sha256:b73d0fddf5ea22563992e4ea5c30d8c409f58d853077e8eb1e9886013dd32813", size = 16176, upload-time = "2025-09-05T10:41:44.121Z" },
 ]
 
 [[package]]

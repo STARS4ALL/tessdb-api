@@ -9,8 +9,9 @@
 # -------------------
 
 import re
-from enum import Enum, auto
-from datetime import datetime
+from math import pi
+from enum import Enum, StrEnum, auto
+from datetime import datetime, timezone
 from typing import Annotated, Optional, Self
 
 # ---------------------
@@ -45,12 +46,22 @@ STARS4ALL_NAME_PATTERN = re.compile(r"^stars\d{1,7}$")
 IMPOSSIBLE_TEMPERATURE = -273.15
 IMPOSSIBLE_SIGNAL_STRENGTH = 99
 
+class RegisterOp(StrEnum):
+    CREATE = "CR"
+    RENAME = "RN"
+    REPLACE = "RP"
+    EXTINCT = "XX"
 
 class UnitsChoice(Enum):
     MQTT = auto()  # Units for readings comming from MQTT real Time
     GRAFANA = auto()  # Bulk import from Grafana
     LOGFILE = auto()  # Readings recovered by log file
 
+
+
+EARTH_RADIUS = 6371009.0  # in meters
+GEO_COORD_EPSILON = (2 / EARTH_RADIUS) * (180 / pi) # in degrees
+INFINITE_T = datetime(year=2999, month=12, day=31, hour=23, minute=59, second=59, tzinfo=timezone.utc)
 
 # --------------------
 # Validation functions

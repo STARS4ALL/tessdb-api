@@ -24,7 +24,7 @@ classifiers = [
 dependencies = [
    "sqlalchemy[asyncio] >= 2.0",
    "lica[aiosqlalchemy]>=2.0", # needs lica library from 2.x on
-   "tessdb-dao>=0.2",
+   "tessdb-dao>=0.3",
    # generic validation
    "pydantic",
    "email-validator",

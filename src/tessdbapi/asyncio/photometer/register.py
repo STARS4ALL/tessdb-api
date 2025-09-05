@@ -26,18 +26,17 @@ from tessdbdao import (
     ObserverType,
     PhotometerModel,
     ValidState,
-    RegisterOp,
     INFINITE_T,
 )
 
 from tessdbdao.asyncio import Location, Observer, NameMapping, Tess
-from tessdbapi.model import PhotometerInfo
 
 # --------------
 # local imports
 # -------------
 
 from ...util import Session, async_lru_cache
+from ...model import PhotometerInfo, RegisterOp
 
 ZP_EPS = 0.005
 FREQ_EPS = 0.001

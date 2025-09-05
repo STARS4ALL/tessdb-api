@@ -19,7 +19,7 @@ from typing import Sequence
 
 from sqlalchemy import select, func
 
-from tessdbdao import ValidState, INFINITE_T
+from tessdbdao import ValidState
 from tessdbdao.noasync import Observer
 
 # --------------
@@ -27,7 +27,7 @@ from tessdbdao.noasync import Observer
 # -------------
 
 from ..util import Session
-from ..model import ObserverInfo
+from ..model import ObserverInfo, INFINITE_T
 
 # ----------------
 # Global variables

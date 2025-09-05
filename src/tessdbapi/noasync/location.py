@@ -23,7 +23,6 @@ from geopy.extra.rate_limiter import RateLimiter
 
 from sqlalchemy import select
 
-from tessdbdao import GEO_COORD_EPSILON as EPSILON
 from tessdbdao.noasync import Location
 
 # --------------
@@ -31,7 +30,7 @@ from tessdbdao.noasync import Location
 # -------------
 
 from ..util import Session
-from ..model import LocationInfo
+from ..model import LocationInfo, GEO_COORD_EPSILON as EPSILON
 
 # ----------------
 # Global variables
