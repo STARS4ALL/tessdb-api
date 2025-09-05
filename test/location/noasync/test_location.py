@@ -1,13 +1,9 @@
 import pytest
-from enum import StrEnum
 import logging
-import shlex
-import subprocess
 from argparse import Namespace
 
 from lica.sqlalchemy import sqa_logging
 
-from tessdbapi.model import LocationInfo
 
 from tessdbapi.noasync.location import location_lookup, location_create, location_update
 
