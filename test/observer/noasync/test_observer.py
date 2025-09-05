@@ -1,9 +1,6 @@
 import pytest
 import logging
-import shlex
-import subprocess
 from argparse import Namespace
-from enum import StrEnum
 
 from pydantic import ValidationError
 
@@ -20,20 +17,9 @@ from tessdbapi.noasync.observer import (
 )
 
 from . import engine, Session
+from ... import DbSize, copy_file
 
 log = logging.getLogger(__name__.split(".")[-1])
-
-
-class DbSize(StrEnum):
-    SMALL = "anew"
-    MEDIUM = "medium"
-    LARGE = "big"
-
-
-def copy_file(src: str, dst: str):
-    cmd = shlex.split(f"cp -f {src} {dst}")
-    log.info("copying %s into %s", src, dst)
-    subprocess.run(cmd)
 
 
 @pytest.fixture(scope="function", params=[DbSize.MEDIUM])
@@ -46,55 +32,41 @@ def database(request):
     engine.dispose()
 
 
-def test_observer_1(database):
-    candidate = ObserverInfo(
-        type=ObserverType.ORG,
-        name="Universidad Complutense de Madrid",
-    )
+def test_observer_1(database, ucm):
     with database.begin():
-        observer_create(session=database, candidate=candidate)
-        observer = observer_lookup_current(session=database, candidate=candidate)
-        assert observer.type == candidate.type
-        assert observer.name == candidate.name
+        observer_create(session=database, candidate=ucm)
+        observer = observer_lookup_current(session=database, candidate=ucm)
+        assert observer.type == ucm.type
+        assert observer.name == ucm.name
         assert observer.valid_state == ValidState.CURRENT
 
     with database.begin():
-        observer_create(session=database, candidate=candidate)
-        observer = observer_lookup_history(session=database, candidate=candidate)
+        observer_create(session=database, candidate=ucm)
+        observer = observer_lookup_history(session=database, candidate=ucm)
         assert len(observer) == 1
 
 
-def test_observer_2(database):
-    candidate = ObserverInfo(
-        type=ObserverType.ORG,
-        name="Universidad Complutense de Madrid",
-    )
+def test_observer_2(database, ucm):
     with database.begin():
-        observer_create(session=database, candidate=candidate)
-        observer_update(session=database, candidate=candidate, fix_current=False)
-        observer = observer_lookup_history(session=database, candidate=candidate)
+        observer_create(session=database, candidate=ucm)
+        observer_update(session=database, candidate=ucm, fix_current=False)
+        observer = observer_lookup_history(session=database, candidate=ucm)
         assert len(observer) == 2
         assert observer[0].valid_state == ValidState.EXPIRED
         assert observer[1].valid_state == ValidState.CURRENT
         assert observer[0].valid_until == observer[1].valid_since
 
 
-def test_observer_3(database):
-    candidate = ObserverInfo(
-        type=ObserverType.ORG,
-        name="Universidad Complutense de Madrid",
-        website_url="https://www.ucm.es",
-        acronym="UCM",
-    )
+def test_observer_3(database, ucm_full):
     with database.begin():
-        observer_create(session=database, candidate=candidate)
-        observer_update(session=database, candidate=candidate, fix_current=False)
-        observer_update(session=database, candidate=candidate, fix_current=True)
-        observer = observer_lookup_history(session=database, candidate=candidate)
+        observer_create(session=database, candidate=ucm_full)
+        observer_update(session=database, candidate=ucm_full, fix_current=False)
+        observer_update(session=database, candidate=ucm_full, fix_current=True)
+        observer = observer_lookup_history(session=database, candidate=ucm_full)
         assert len(observer) == 2
         assert observer[-1].valid_state == ValidState.CURRENT
-        assert observer[-1].website_url == str(candidate.website_url)
-        assert observer[-1].acronym == candidate.acronym
+        assert observer[-1].website_url == str(ucm_full.website_url)
+        assert observer[-1].acronym == ucm_full.acronym
 
 
 def test_observer_excp():

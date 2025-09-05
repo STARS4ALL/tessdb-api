@@ -1,8 +1,7 @@
 import pytest
-import pytest_asyncio
 
 from tessdbdao import PhotometerModel, RegisterState
-from tessdbapi.noasync.photometer.register import PhotometerInfo
+from tessdbapi.model import PhotometerInfo
 
 
  

@@ -12,20 +12,9 @@ from tessdbapi.model import LocationInfo
 from tessdbapi.noasync.location import location_lookup, location_create, location_update
 
 from . import engine, Session
+from ... import DbSize, copy_file
 
 log = logging.getLogger(__name__.split(".")[-1])
-
-
-class DbSize(StrEnum):
-    SMALL = "anew"
-    MEDIUM = "medium"
-    LARGE = "big"
-
-
-def copy_file(src: str, dst: str):
-    cmd = shlex.split(f"cp -f {src} {dst}")
-    log.info("copying %s into %s", src, dst)
-    subprocess.run(cmd)
 
 
 @pytest.fixture(scope="function", params=[DbSize.MEDIUM])
@@ -38,52 +27,34 @@ def database(request):
     engine.dispose()
 
 
-def test_location_create_1(database):
-    candidate = LocationInfo(
-        longitude=-3.6124434,
-        latitude=40.4208393,
-        height=900,
-        place="Melrose Place",
-    )
+def test_location_create_1(database, melorse):
     with database.begin():
-        location_create(session=database, candidate=candidate)
-        location = location_lookup(session=database, candidate=candidate)
-        assert location.longitude == candidate.longitude
-        assert location.latitude == candidate.latitude
-        assert location.elevation == candidate.height
+        location_create(session=database, candidate=melorse)
+        location = location_lookup(session=database, candidate=melorse)
+        assert location.longitude == melorse.longitude
+        assert location.latitude == melorse.latitude
+        assert location.elevation == melorse.height
         assert location.country == "Spain"
         assert location.timezone == "Europe/Paris"
 
 
-def test_location_create_2(database):
-    candidate = LocationInfo(
-        place="Melrose Place",
-        longitude=-3.6124434,
-        latitude=40.4208393,
-        height=900,
-    )
+def test_location_create_2(database, melorse):
     with database.begin():
-        location_create(session=database, candidate=candidate)
-        location_create(session=database, candidate=candidate)
+        location_create(session=database, candidate=melorse)
+        location_create(session=database, candidate=melorse)
 
 
-def test_location_update_1(database):
-    candidate = LocationInfo(
-        place="Melrose Place",
-        longitude=-3.6124434,
-        latitude=40.4208393,
-        height=900,
-    )
+def test_location_update_1(database, melorse):
     with database.begin():
-        location_create(session=database, candidate=candidate)
+        location_create(session=database, candidate=melorse)
     log.info("Updating Location")
-    candidate.height = 880
-    candidate.timezone = "Europe/Madrid"
+    melorse.height = 880
+    melorse.timezone = "Europe/Madrid"
     with database.begin():
-        location_update(session=database, candidate=candidate)
-        location = location_lookup(session=database, candidate=candidate)
-        location = location_lookup(session=database, candidate=candidate)
-        assert location.longitude == candidate.longitude
-        assert location.latitude == candidate.latitude
-        assert location.elevation == candidate.height
-        assert location.timezone == candidate.timezone
+        location_update(session=database, candidate=melorse)
+        location = location_lookup(session=database, candidate=melorse)
+        location = location_lookup(session=database, candidate=melorse)
+        assert location.longitude == melorse.longitude
+        assert location.latitude == melorse.latitude
+        assert location.elevation == melorse.height
+        assert location.timezone == melorse.timezone

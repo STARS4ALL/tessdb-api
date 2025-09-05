@@ -4,10 +4,10 @@ from typing import List
 from datetime import datetime, timezone
 
 
-from tessdbapi.noasync.photometer.reading import ReadingInfo
+from tessdbapi.model import ReadingInfo
 
 @pytest.fixture()
-def stars8000r1(request) -> ReadingInfo:
+def stars8000r1() -> ReadingInfo:
     return ReadingInfo(
         tstamp=datetime(2025, 9, 4, 12, 34, 56, tzinfo=timezone.utc),
         name="stars8000",
@@ -21,7 +21,7 @@ def stars8000r1(request) -> ReadingInfo:
 
 
 @pytest.fixture()
-def stars1r1(request) -> ReadingInfo:
+def stars1r1() -> ReadingInfo:
     return ReadingInfo(
         tstamp=datetime(2025, 9, 4, 12, 34, 56, tzinfo=timezone.utc),
         name="stars1",
@@ -34,7 +34,7 @@ def stars1r1(request) -> ReadingInfo:
     )
 
 @pytest.fixture()
-def stars1r1_wrong_hash(request) -> ReadingInfo:
+def stars1r1_wrong_hash() -> ReadingInfo:
     return ReadingInfo(
         tstamp=datetime(2025, 9, 4, 12, 34, 56, tzinfo=timezone.utc),
         name="stars1",
@@ -48,7 +48,7 @@ def stars1r1_wrong_hash(request) -> ReadingInfo:
     )
 
 @pytest.fixture()
-def stars1r1_good_hash(request) -> ReadingInfo:
+def stars1r1_good_hash() -> ReadingInfo:
     return ReadingInfo(
         tstamp=datetime(2025, 9, 4, 12, 34, 56, tzinfo=timezone.utc),
         name="stars1",
@@ -62,7 +62,7 @@ def stars1r1_good_hash(request) -> ReadingInfo:
     )
 
 @pytest.fixture()
-def stars100r1(request) -> ReadingInfo:
+def stars100r1() -> ReadingInfo:
     return ReadingInfo(
         tstamp=datetime(2025, 9, 4, 12, 34, 56, tzinfo=timezone.utc),
         name="stars100",
@@ -76,7 +76,7 @@ def stars100r1(request) -> ReadingInfo:
 
 
 @pytest.fixture()
-def stars1_dense(request) -> List[ReadingInfo]:
+def stars1_dense() -> List[ReadingInfo]:
     return [
         ReadingInfo(
             tstamp=datetime(2025, 9, 4, 00, 00, 00, tzinfo=timezone.utc),
@@ -182,7 +182,7 @@ def stars1_dense(request) -> List[ReadingInfo]:
 
 
 @pytest.fixture()
-def stars1_sparse(request) -> List[ReadingInfo]:
+def stars1_sparse() -> List[ReadingInfo]:
     return [
         ReadingInfo(
             tstamp=datetime(2025, 9, 4, 00, 2, 00, tzinfo=timezone.utc),
@@ -227,7 +227,7 @@ def stars1_sparse(request) -> List[ReadingInfo]:
     ]
 
 @pytest.fixture()
-def stars1_sparse_dup(request) -> List[ReadingInfo]:
+def stars1_sparse_dup() -> List[ReadingInfo]:
     return [
         ReadingInfo(
             tstamp=datetime(2025, 9, 4, 00, 2, 00, tzinfo=timezone.utc),
