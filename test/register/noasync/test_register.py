@@ -1,9 +1,6 @@
 import pytest
 import logging
-import shlex
-import subprocess
 from argparse import Namespace
-from enum import StrEnum
 from typing import Optional, Sequence
 from datetime import datetime
 
@@ -11,7 +8,7 @@ from sqlalchemy import func, select
 
 from lica.sqlalchemy import sqa_logging
 
-from tessdbdao import ObserverType, PhotometerModel, ValidState, RegisterState
+from tessdbdao import ObserverType, ValidState, RegisterState
 
 from tessdbdao.noasync import Tess
 
@@ -24,19 +21,9 @@ from tessdbapi.noasync.photometer.register import (
 
 from . import engine, Session
 
+from ... import DbSize, copy_file
+
 log = logging.getLogger(__name__.split(".")[-1])
-
-
-class DbSize(StrEnum):
-    SMALL = "anew"
-    MEDIUM = "medium"
-    LARGE = "big"
-
-
-def copy_file(src: str, dst: str):
-    cmd = shlex.split(f"cp -f {src} {dst}")
-    log.info("copying %s into %s", src, dst)
-    subprocess.run(cmd)
 
 
 # -------------------------------
@@ -80,156 +67,6 @@ def database(request):
     engine.dispose()
 
 
-@pytest.fixture(scope="function")
-def stars8000():
-    return PhotometerInfo(
-        name="stars8000",
-        mac_address="AA:BB:CC:DD:EE:FF",
-        model=PhotometerModel.TESSW,
-        firmware="0.1.0",
-        authorised=True,
-        registered=RegisterState.MANUAL,
-        zp1=20.50,
-        filter1="UV/IR-740",
-        offset1=0.0,
-    )
-
-@pytest.fixture(scope="function")
-def stars8000zp():
-    return PhotometerInfo(
-        name="stars8000",
-        mac_address="AA:BB:CC:DD:EE:FF",
-        model=PhotometerModel.TESSW,
-        firmware="0.1.0",
-        authorised=True,
-        registered=RegisterState.MANUAL,
-        zp1=20.33,
-        filter1="UV/IR-740",
-        offset1=0.001,
-    )
-
-
-@pytest.fixture(scope="function")
-def stars8001():
-    return PhotometerInfo(
-        name="stars8001",
-        mac_address="AA:BB:CC:DD:EE:FF",
-        model=PhotometerModel.TESSW,
-        firmware="0.1.0",
-        authorised=True,
-        registered=RegisterState.MANUAL,
-        zp1=20.50,
-        filter1="UV/IR-740",
-        offset1=0.0,
-    )
-
-
-@pytest.fixture(scope="function")
-def stars8000rep():
-    return PhotometerInfo(
-        name="stars8000",
-        mac_address="FF:EE:DD:CC:BB:AA",
-        model=PhotometerModel.TESSW,
-        firmware="0.1.0",
-        authorised=True,
-        registered=RegisterState.MANUAL,
-        zp1=20.48,
-        filter1="UV/IR-740",
-        offset1=0.0,
-    )
-
-
-@pytest.fixture(scope="function")
-def stars8002():
-    return PhotometerInfo(
-        name="stars8002",
-        mac_address="CC:AA:CC:AA:DD:AA",
-        model=PhotometerModel.TESSW,
-        firmware="0.1.0",
-        authorised=True,
-        registered=RegisterState.MANUAL,
-        zp1=20.50,
-        filter1="UV/IR-740",
-        offset1=0.0,
-    )
-
-
-@pytest.fixture(scope="function")
-def stars8002ex():
-    return PhotometerInfo(
-        name="stars8000",
-        mac_address="CC:AA:CC:AA:DD:AA",
-        model=PhotometerModel.TESSW,
-        firmware="0.1.0",
-        authorised=True,
-        registered=RegisterState.MANUAL,
-        zp1=20.50,
-        filter1="UV/IR-740",
-        offset1=0.0,
-    )
-
-
-@pytest.fixture(scope="function")
-def stars8010():
-    return PhotometerInfo(
-        name="stars8010",
-        mac_address="AA:CC:BB:DD:AA:DD",
-        model=PhotometerModel.TESS4C,
-        firmware="0.1.0",
-        authorised=True,
-        registered=RegisterState.MANUAL,
-        zp1=20.30,
-        filter1="Johnson-V",
-        offset1=0.0,
-        zp2=20.35,
-        filter2="Johnson-R",
-        offset2=0.0,
-        zp3=20.40,
-        filter3="Johnson-B",
-        offset3=0.0,
-        zp4=20.50,
-        filter4="UV/IR-740",
-        offset4=0.0,
-    )
-
-@pytest.fixture(scope="function")
-def stars8010zp():
-    return PhotometerInfo(
-        name="stars8010",
-        mac_address="AA:CC:BB:DD:AA:DD",
-        model=PhotometerModel.TESS4C,
-        firmware="0.1.0",
-        authorised=True,
-        registered=RegisterState.MANUAL,
-        zp1=20.31,
-        filter1="Johnson-V",
-        offset1=0.0,
-        zp2=20.30,
-        filter2="Johnson-R",
-        offset2=0.0,
-        zp3=20.40,
-        filter3="Johnson-B",
-        offset3=0.0,
-        zp4=20.51,
-        filter4="UV/IR-750",
-        offset4=0.0,
-    )
-
-
-@pytest.fixture(scope="function")
-def stars993():
-    return PhotometerInfo(
-        name="stars993",
-        mac_address="4C:75:25:27:7E:A2", # Latest entry
-        model=PhotometerModel.TESSW,
-        firmware="0.1.0",
-        authorised=True,
-        registered=RegisterState.MANUAL,
-        zp1=20.99,
-        filter1="UV/IR-740",
-        offset1=0.0,
-    )
-
 def test_register_timestamps_types(database, stars993):
     """
     Old tessdb database had timestamps in format YYYY-mm-DD HH:MM:SS+00:00
@@ -253,8 +90,7 @@ def test_register_timestamps_types(database, stars993):
         for i in range(len(photometer)):
             assert isinstance(photometer[i].valid_since, datetime)
             assert isinstance(photometer[i].valid_until, datetime)
-            
-        
+
 
 def test_register_tessw_single(database, stars8000):
     place = "Facultad de Físicas UCM"
@@ -415,6 +251,7 @@ def test_register_tessw_changezp(database, stars8000, stars8000zp):
         assert photometer[0].valid_state == ValidState.EXPIRED
         assert photometer[1].valid_state == ValidState.CURRENT
         assert photometer[0].valid_until == photometer[1].valid_since
+
 
 def test_register_tess4c_changezp(database, stars8010, stars8010zp):
     place = "Facultad de Físicas UCM"

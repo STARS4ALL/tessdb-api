@@ -1,9 +1,6 @@
 import pytest
 import logging
-import shlex
-import subprocess
 from argparse import Namespace
-from enum import StrEnum
 from typing import List
 from datetime import datetime, timezone
 
@@ -12,9 +9,9 @@ from pydantic import ValidationError
 
 from lica.sqlalchemy import sqa_logging
 
-from tessdbdao.noasync import TessReadings, Tess4cReadings
+from tessdbdao.noasync import TessReadings
 
-from tessdbapi.noasync.photometer.reading import ReadingInfo, ReadingInfo4c, UnitsChoice
+from tessdbapi.noasync.photometer.reading import ReadingInfo, UnitsChoice
 from tessdbapi.noasync.photometer.reading import (
     resolve_references,
     tess_new,
@@ -22,20 +19,9 @@ from tessdbapi.noasync.photometer.reading import (
 )
 
 from . import engine, Session
+from ... import DbSize, copy_file
 
 log = logging.getLogger(__name__.split(".")[-1])
-
-
-class DbSize(StrEnum):
-    SMALL = "anew"
-    MEDIUM = "medium"
-    LARGE = "big"
-
-
-def copy_file(src: str, dst: str):
-    cmd = shlex.split(f"cp -f {src} {dst}")
-    log.info("copying %s into %s", src, dst)
-    subprocess.run(cmd)
 
 
 # -------------------------------
@@ -61,272 +47,6 @@ def database(request):
     yield Session()
     log.info("Teardown code disposes the engine")
     engine.dispose()
-
-
-@pytest.fixture()
-def stars8000r1(request) -> ReadingInfo:
-    return ReadingInfo(
-        tstamp=datetime(2025, 9, 4, 12, 34, 56, tzinfo=timezone.utc),
-        name="stars8000",
-        sequence_number=1,
-        frequency=10,
-        magnitude=23.4,
-        box_temperature=12,
-        sky_temperature=-12,
-        signal_strength=-78,
-    )
-
-
-@pytest.fixture()
-def stars1r1(request) -> ReadingInfo:
-    return ReadingInfo(
-        tstamp=datetime(2025, 9, 4, 12, 34, 56, tzinfo=timezone.utc),
-        name="stars1",
-        sequence_number=1,
-        frequency=10,
-        magnitude=23.4,
-        box_temperature=12,
-        sky_temperature=-12,
-        signal_strength=-78,
-    )
-
-@pytest.fixture()
-def stars1r1_wrong_hash(request) -> ReadingInfo:
-    return ReadingInfo(
-        tstamp=datetime(2025, 9, 4, 12, 34, 56, tzinfo=timezone.utc),
-        name="stars1",
-        sequence_number=1,
-        frequency=10,
-        magnitude=23.4,
-        box_temperature=12,
-        sky_temperature=-12,
-        signal_strength=-78,
-        hash="ABC"
-    )
-
-@pytest.fixture()
-def stars1r1_good_hash(request) -> ReadingInfo:
-    return ReadingInfo(
-        tstamp=datetime(2025, 9, 4, 12, 34, 56, tzinfo=timezone.utc),
-        name="stars1",
-        sequence_number=1,
-        frequency=10,
-        magnitude=23.4,
-        box_temperature=12,
-        sky_temperature=-12,
-        signal_strength=-78,
-        hash="95A"
-    )
-
-@pytest.fixture()
-def stars100r1(request) -> ReadingInfo:
-    return ReadingInfo(
-        tstamp=datetime(2025, 9, 4, 12, 34, 56, tzinfo=timezone.utc),
-        name="stars100",
-        sequence_number=1,
-        frequency=10,
-        magnitude=23.4,
-        box_temperature=12,
-        sky_temperature=-12,
-        signal_strength=-78,
-    )
-
-
-@pytest.fixture()
-def stars1_dense(request) -> List[ReadingInfo]:
-    return [
-        ReadingInfo(
-            tstamp=datetime(2025, 9, 4, 00, 00, 00, tzinfo=timezone.utc),
-            name="stars1",
-            sequence_number=0,
-            frequency=10,
-            magnitude=23.4,
-            box_temperature=12,
-            sky_temperature=-12,
-            signal_strength=-78,
-        ),
-        ReadingInfo(
-            tstamp=datetime(2025, 9, 4, 00, 1, 00, tzinfo=timezone.utc),
-            name="stars1",
-            sequence_number=1,
-            frequency=10,
-            magnitude=23.4,
-            box_temperature=12,
-            sky_temperature=-12,
-            signal_strength=-78,
-        ),
-        ReadingInfo(
-            tstamp=datetime(2025, 9, 4, 00, 2, 00, tzinfo=timezone.utc),
-            name="stars1",
-            sequence_number=2,
-            frequency=10,
-            magnitude=23.4,
-            box_temperature=12,
-            sky_temperature=-12,
-            signal_strength=-78,
-        ),
-        ReadingInfo(
-            tstamp=datetime(2025, 9, 4, 00, 3, 00, tzinfo=timezone.utc),
-            name="stars1",
-            sequence_number=3,
-            frequency=10,
-            magnitude=23.4,
-            box_temperature=12,
-            sky_temperature=-12,
-            signal_strength=-78,
-        ),
-        ReadingInfo(
-            tstamp=datetime(2025, 9, 4, 00, 4, 00, tzinfo=timezone.utc),
-            name="stars1",
-            sequence_number=4,
-            frequency=10,
-            magnitude=23.4,
-            box_temperature=12,
-            sky_temperature=-12,
-            signal_strength=-78,
-        ),
-        ReadingInfo(
-            tstamp=datetime(2025, 9, 4, 00, 5, 00, tzinfo=timezone.utc),
-            name="stars1",
-            sequence_number=5,
-            frequency=10,
-            magnitude=23.4,
-            box_temperature=12,
-            sky_temperature=-12,
-            signal_strength=-78,
-        ),
-        ReadingInfo(
-            tstamp=datetime(2025, 9, 4, 00, 6, 00, tzinfo=timezone.utc),
-            name="stars1",
-            sequence_number=6,
-            frequency=10,
-            magnitude=23.4,
-            box_temperature=12,
-            sky_temperature=-12,
-            signal_strength=-78,
-        ),
-        ReadingInfo(
-            tstamp=datetime(2025, 9, 4, 00, 7, 00, tzinfo=timezone.utc),
-            name="stars1",
-            sequence_number=7,
-            frequency=10,
-            magnitude=23.4,
-            box_temperature=12,
-            sky_temperature=-12,
-            signal_strength=-78,
-        ),
-        ReadingInfo(
-            tstamp=datetime(2025, 9, 4, 00, 8, 00, tzinfo=timezone.utc),
-            name="stars1",
-            sequence_number=8,
-            frequency=10,
-            magnitude=23.4,
-            box_temperature=12,
-            sky_temperature=-12,
-            signal_strength=-78,
-        ),
-        ReadingInfo(
-            tstamp=datetime(2025, 9, 4, 00, 9, 00, tzinfo=timezone.utc),
-            name="stars1",
-            sequence_number=9,
-            frequency=10,
-            magnitude=23.4,
-            box_temperature=12,
-            sky_temperature=-12,
-            signal_strength=-78,
-        ),
-    ]
-
-
-@pytest.fixture()
-def stars1_sparse(request) -> List[ReadingInfo]:
-    return [
-        ReadingInfo(
-            tstamp=datetime(2025, 9, 4, 00, 2, 00, tzinfo=timezone.utc),
-            name="stars1",
-            sequence_number=2,
-            frequency=10,
-            magnitude=23.4,
-            box_temperature=12,
-            sky_temperature=-12,
-            signal_strength=-78,
-        ),
-        ReadingInfo(
-            tstamp=datetime(2025, 9, 4, 00, 3, 00, tzinfo=timezone.utc),
-            name="stars1",
-            sequence_number=3,
-            frequency=10,
-            magnitude=23.4,
-            box_temperature=12,
-            sky_temperature=-12,
-            signal_strength=-78,
-        ),
-        ReadingInfo(
-            tstamp=datetime(2025, 9, 4, 00, 5, 00, tzinfo=timezone.utc),
-            name="stars1",
-            sequence_number=5,
-            frequency=10,
-            magnitude=23.4,
-            box_temperature=12,
-            sky_temperature=-12,
-            signal_strength=-78,
-        ),
-        ReadingInfo(
-            tstamp=datetime(2025, 9, 4, 00, 7, 00, tzinfo=timezone.utc),
-            name="stars1",
-            sequence_number=7,
-            frequency=10,
-            magnitude=23.4,
-            box_temperature=12,
-            sky_temperature=-12,
-            signal_strength=-78,
-        ),
-    ]
-
-@pytest.fixture()
-def stars1_sparse_dup(request) -> List[ReadingInfo]:
-    return [
-        ReadingInfo(
-            tstamp=datetime(2025, 9, 4, 00, 2, 00, tzinfo=timezone.utc),
-            name="stars1",
-            sequence_number=2,
-            frequency=10,
-            magnitude=23.4,
-            box_temperature=12,
-            sky_temperature=-12,
-            signal_strength=-78,
-        ),
-        ReadingInfo(
-            tstamp=datetime(2025, 9, 4, 00, 3, 00, tzinfo=timezone.utc),
-            name="stars1",
-            sequence_number=3,
-            frequency=10,
-            magnitude=23.4,
-            box_temperature=12,
-            sky_temperature=-12,
-            signal_strength=-78,
-        ),
-        ReadingInfo(
-            tstamp=datetime(2025, 9, 4, 00, 3, 00, tzinfo=timezone.utc),
-            name="stars1",
-            sequence_number=3,
-            frequency=10,
-            magnitude=23.4,
-            box_temperature=12,
-            sky_temperature=-12,
-            signal_strength=-78,
-        ),
-        ReadingInfo(
-            tstamp=datetime(2025, 9, 4, 00, 7, 00, tzinfo=timezone.utc),
-            name="stars1",
-            sequence_number=7,
-            frequency=10,
-            magnitude=23.4,
-            box_temperature=12,
-            sky_temperature=-12,
-            signal_strength=-78,
-        ),
-    ]
 
 
 def test_reading_nonexists(database, stars8000r1):
