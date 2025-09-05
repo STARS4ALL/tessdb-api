@@ -160,6 +160,12 @@ async def test_reading_write_dup2(database, stars1_sparse_dup):
         readings = await fetch_readings(database)
     assert len(readings) == 3
 
+@pytest.mark.asyncio
+async def test_reading_write_mixed(database, stars1_mixed):
+    await tess_batch_write(database, stars1_mixed)
+    async with database.begin():
+        readings = await fetch_readings(database)
+    assert len(readings) == len(stars1_mixed) - 2
 
 def test_valid_reading_1(database):
     with pytest.raises(ValidationError) as e:

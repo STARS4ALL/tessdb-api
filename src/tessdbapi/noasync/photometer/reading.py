@@ -282,8 +282,8 @@ def photometer_batch_write(
         try:
             session.commit()
         except Exception as e:
-            e = str(e).split("\n")[0]
-            log.error("%s. Looping one by one.", e)
+            log.error(str(e).split("\n")[0])
+            log.info("Looping %d readings one by one.", len(objs))
             session.rollback()
             session.close()
             _photometer_looped_write(session, objs, items)
