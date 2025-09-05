@@ -23,7 +23,7 @@ from geopy.extra.rate_limiter import RateLimiter
 
 from sqlalchemy import select
 
-from tessdbdao.noasync import Location
+from tessdbdao.asyncio import Location
 
 # --------------
 # local imports
