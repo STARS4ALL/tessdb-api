@@ -17,7 +17,7 @@ from tessdbdao.noasync import TessReadings, Tess4cReadings
 from tessdbapi.noasync.photometer.reading import ReadingInfo, ReadingInfo4c, UnitsChoice
 from tessdbapi.noasync.photometer.reading import (
     resolve_references,
-    tess_write_readings,
+    tess_new,
     tess_batch_write,
 )
 
@@ -344,11 +344,11 @@ def test_reading_write_1(database, stars1r1):
             units_choice=UnitsChoice.LOGFILE,
         )
         if ref is not None:
-            tess_write_readings(
-                session=database,
+            obj = tess_new(
                 reading=stars1r1,
                 reference=ref,
             )
+            database.add(obj)
         database.commit()
     with database.begin():
         readings = fetch_readings(database)
@@ -365,6 +365,9 @@ def test_reading_write_4(database, stars1_sparse):
 
 def test_reading_write_dup(database, stars1_sparse, stars1_dense):
     tess_batch_write(database, stars1_sparse)
+    with database.begin():
+        readings = fetch_readings(database)
+    assert len(readings) == 4
     tess_batch_write(database, stars1_dense)
     with database.begin():
         readings = fetch_readings(database)

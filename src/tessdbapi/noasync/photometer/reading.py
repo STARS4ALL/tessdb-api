@@ -10,7 +10,7 @@
 
 import logging
 from datetime import datetime
-from typing import Optional, Tuple, Sequence, List, Callable
+from typing import Optional, Tuple, Iterable, Sequence, List, Callable, Union
 from functools import lru_cache
 
 # -------------------
@@ -36,11 +36,13 @@ from tessdbdao.noasync import Units, NameMapping, Tess, Tess4cReadings, TessRead
 # -------------
 
 from ...util import Session
-from ...model import UnitsChoice,  ReferencesInfo, ReadingInfo, ReadingInfo4c
+from ...model import UnitsChoice, ReferencesInfo, ReadingInfo, ReadingInfo4c
 
 # ----------------
 # Global variables
 # ----------------
+
+PhotReadings = Union[TessReadings, Tess4cReadings]
 
 log = logging.getLogger(__name__.split(".")[-1])
 
@@ -65,8 +67,6 @@ class HashMismatchError(RuntimeError):
     """photometer hash mismatch error"""
 
     pass
-
-
 
 
 @lru_cache(maxsize=10)
@@ -176,12 +176,11 @@ def resolve_references_seq(
     ]
 
 
-def tess_write_readings(
-    session: Session,
+def tess_new(
     reading: ReadingInfo,
     reference: ReferencesInfo,
-) -> None:
-    db_reading = TessReadings(
+) -> Tess:
+    return TessReadings(
         date_id=reference.date_id,
         time_id=reference.time_id,
         tess_id=reference.tess_id,
@@ -201,15 +200,13 @@ def tess_write_readings(
         signal_strength=reading.signal_strength,
         hash=reading.hash,
     )
-    session.add(db_reading)
 
 
-def tess4c_write_readings(
-    session: Session,
+def tess4c_new(
     reading: ReadingInfo4c,
     reference: ReferencesInfo,
 ) -> None:
-    db_reading = Tess4cReadings(
+    return Tess4cReadings(
         date_id=reference.date_id,
         time_id=reference.time_id,
         tess_id=reference.tess_id,
@@ -235,27 +232,22 @@ def tess4c_write_readings(
         signal_strength=reading.signal_strength,
         hash=reading.hash,
     )
-    session.add(db_reading)
 
 
 def _photometer_looped_write(
     session: Session,
-    readings: Sequence[ReadingInfo],
-    references: Sequence[Optional[ReferencesInfo]],
-    write_func: Callable[[Session, Sequence, Sequence], None],
+    objs: Iterable[PhotReadings],
+    items: Sequence[Tuple[ReadingInfo,ReferencesInfo]]
 ):
     """One by one commit of database records"""
-    for reading, reference in zip(readings, references):
-        if reference:
-            with session.begin():
-                write_func(session, reading, reference)
-                try:
-                    session.flush()
-                except Exception:
-                    log.warning("Discarding reading by SQL Integrity error: %s", dict(reading))
-                    session.rollback()
-                else:
-                    session.commit()
+    for i,obj in enumerate(objs):
+        with session.begin():
+            session.add(obj)
+            try:
+                session.commit()
+            except Exception:
+                log.warning("Discarding reading by SQL Integrity error: %s", dict(items[i][0]))
+                session.rollback()
 
 
 # ==================
@@ -265,8 +257,8 @@ def _photometer_looped_write(
 
 def photometer_batch_write(
     session: Session,
-    readings: Sequence[ReadingInfo],
-    write_func: Callable[[Session, Sequence, Sequence], None],
+    readings: Iterable[ReadingInfo],
+    factory_func: Callable[[ReadingInfo, ReferencesInfo], PhotReadings],
     auth_filter: bool,
     latest: bool,
     units_choice: UnitsChoice,
@@ -280,23 +272,22 @@ def photometer_batch_write(
         latest,
         units_choice,
     )
-    for reading, reference in zip(readings, references):
-        if reference:
-            write_func(session, reading, reference)
+    items = tuple(filter(lambda x: x[1] is not None, zip(readings, references)))
+    objs = tuple(factory_func(reading, reference) for reading, reference in items)
+    session.add_all(objs)
     if dry_run:
         log.warning("Dry run mode. Database not written")
         session.rollback()
     else:
         try:
-            session.flush()
+            session.commit()
         except Exception as e:
-            log.error(e)
+            # log.error(e)
             log.warning("SQL Integrity error in block write. Looping one by one ...")
             session.rollback()
             session.close()
-            _photometer_looped_write(session, readings, references, write_func)
+            _photometer_looped_write(session, objs, items)
         else:
-            session.commit()
             session.close()
 
 
@@ -308,9 +299,7 @@ def tess_batch_write(
     units_choice: UnitsChoice = UnitsChoice.MQTT,
     dry_run: Optional[bool] = False,
 ) -> None:
-    photometer_batch_write(
-        session, readings, tess_write_readings, auth_filter, latest, units_choice, dry_run
-    )
+    photometer_batch_write(session, readings, tess_new, auth_filter, latest, units_choice, dry_run)
 
 
 def tess4c_batch_write(
@@ -322,5 +311,5 @@ def tess4c_batch_write(
     dry_run: Optional[bool] = False,
 ) -> None:
     photometer_batch_write(
-        session, readings, tess4c_write_readings, auth_filter, latest, units_choice, dry_run
+        session, readings, tess4c_new, auth_filter, latest, units_choice, dry_run
     )
