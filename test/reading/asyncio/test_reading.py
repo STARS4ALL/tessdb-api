@@ -10,12 +10,13 @@ from pydantic import ValidationError
 
 from lica.sqlalchemy import sqa_logging
 
-from tessdbdao.asyncio import TessReadings
+from tessdbdao.asyncio import TessReadings, Tess4cReadings
 
 from tessdbapi.model import ReadingInfo1c, UnitsChoice
 from tessdbapi.asyncio.photometer.reading import (
     resolve_references,
     tess_new,
+    tess4c_new,
     tess_batch_write,
 )
 
@@ -34,6 +35,10 @@ async def fetch_readings(session: Session) -> List[TessReadings]:
     query = select(TessReadings).order_by(TessReadings.date_id.asc(), TessReadings.time_id.asc())
     return (await session.scalars(query)).all()
 
+
+async def fetch_readings4c(session: Session) -> List[Tess4cReadings]:
+    query = select(Tess4cReadings).order_by(Tess4cReadings.date_id.asc(), Tess4cReadings.time_id.asc())
+    return (await session.scalars(query)).all()
 
 # ------------------
 # Convenient fixtures
@@ -166,6 +171,53 @@ async def test_reading_write_mixed(database, stars1_mixed):
     async with database.begin():
         readings = await fetch_readings(database)
     assert len(readings) == len(stars1_mixed) - 2
+
+@pytest.mark.asyncio
+async def test_reading4c_write_1(database, stars701):
+    async with database.begin():
+        ref = await resolve_references(
+            session=database,
+            reading=stars701,
+            auth_filter=False,
+            latest=False,
+            units_choice=UnitsChoice.LOGFILE,
+        )
+        if ref is not None:
+            obj = tess4c_new(
+                reading=stars701,
+                reference=ref,
+            )
+            database.add(obj)
+        await database.commit()
+    async with database.begin():
+        readings = await fetch_readings4c(database)
+    assert len(readings) == 1
+    assert readings[0].sequence_number == 1
+
+@pytest.mark.asyncio
+async def test_reading4c_write_1b(database, stars701):
+    await tess_batch_write(database, [stars701,])
+    async with database.begin():
+        readings = await fetch_readings4c(database)
+    assert len(readings) == 1
+    assert readings[0].sequence_number == 1
+
+@pytest.mark.asyncio
+async def test_reading4c_write_5(database, stars701_seq):
+    await tess_batch_write(database, stars701_seq)
+    async with database.begin():
+        readings = await fetch_readings4c(database)
+    assert len(readings) == 5
+
+@pytest.mark.asyncio
+async def test_reading4c_write_mixed(database, stars_mixed):
+    await tess_batch_write(database, stars_mixed)
+    async with database.begin():
+        readings_1 = await fetch_readings(database)
+        readings_2 = await fetch_readings4c(database)
+    assert len(readings_1) == 10
+    assert len(readings_2) == 5
+
 
 def test_valid_reading_1(database):
     with pytest.raises(ValidationError) as e:

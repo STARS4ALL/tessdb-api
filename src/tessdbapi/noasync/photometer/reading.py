@@ -215,6 +215,7 @@ def tess4c_new(
         location_id=reference.location_id,
         observer_id=reference.observer_id,
         units_id=reference.units_id,
+        sequence_number=reading.sequence_number,
         freq1=reading.freq1,
         mag1=reading.freq1,
         freq2=reading.freq2,

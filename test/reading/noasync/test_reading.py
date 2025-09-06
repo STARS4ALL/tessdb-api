@@ -45,7 +45,7 @@ def fetch_readings4c(session: Session) -> List[Tess4cReadings]:
 
 @pytest.fixture(scope="function", params=[DbSize.MEDIUM])
 def database(request):
-    args = Namespace(verbose=False)
+    args = Namespace(verbose=True)
     sqa_logging(args)
     copy_file(f"tess.{request.param}.db", "tess.db")
     yield Session()
@@ -179,11 +179,26 @@ def test_reading4c_write_1(database, stars701):
     assert len(readings) == 1
     assert readings[0].sequence_number == 1
 
+def test_reading4c_write_1b(database, stars701):
+    tess_batch_write(database, [stars701,])
+    with database.begin():
+        readings = fetch_readings4c(database)
+    assert len(readings) == 1
+    assert readings[0].sequence_number == 1
+
 def test_reading4c_write_5(database, stars701_seq):
     tess_batch_write(database, stars701_seq)
     with database.begin():
         readings = fetch_readings4c(database)
     assert len(readings) == 5
+
+def test_reading4c_write_mixed(database, stars_mixed):
+    tess_batch_write(database, stars_mixed)
+    with database.begin():
+        readings_1 = fetch_readings(database)
+        readings_2 = fetch_readings4c(database)
+    assert len(readings_1) == 10
+    assert len(readings_2) == 5
 
 def test_valid_reading_1(database):
     with pytest.raises(ValidationError) as e:
