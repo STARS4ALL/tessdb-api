@@ -42,8 +42,7 @@ from ...model import (
     ReadingInfo1c,
     ReadingInfo4c,
     ReadingInfo,
-    EventType,
-    ReadingSubEvent,
+    ReadingEvent,
 )
 
 # ----------------
@@ -139,14 +138,12 @@ def resolve_references(
     latest: bool,
     source: SourceType,
 ) -> Optional[ReferencesInfo]:
-    pub.sendMessage(EventType.READING, sub_event=ReadingSubEvent.WRITE_REQUEST, source=source)
+    pub.sendMessage(ReadingEvent.WRITE_REQUEST, source=source)
     units_id = resolve_units_id(session, source)
     try:
         phot = find_photometer_by_name(session, reading.name, reading.hash, reading.tstamp, latest)
         if phot is None:
-            pub.sendMessage(
-                EventType.READING, sub_event=ReadingSubEvent.NOT_REGISTERED, source=source
-            )
+            pub.sendMessage(ReadingEvent.NOT_REGISTERED, source=source)
             log.warning(
                 "No TESS %s registered ! => %s",
                 reading.name,
@@ -154,16 +151,14 @@ def resolve_references(
             )
             return None
     except HashMismatchError as e:
-        pub.sendMessage(EventType.READING, sub_event=ReadingSubEvent.HASH_MISMATCH, source=source)
+        pub.sendMessage(ReadingEvent.HASH_MISMATCH, source=source)
         log.warning(
             "[%s] Reading rejected by hash mismatch: %s => %s", reading.name, str(e), dict(reading)
         )
         return None
     else:
         if auth_filter and not phot.authorised:
-            pub.sendMessage(
-                EventType.READING, sub_event=ReadingSubEvent.NOT_AUTHORISED, source=source
-            )
+            pub.sendMessage(ReadingEvent.NOT_AUTHORISED, source=source)
             log.warning("[%s]: Not authorised: %s", reading.name, dict(reading))
             return None
         date_id, time_id = split_datetime(reading.tstamp)
@@ -267,15 +262,11 @@ def _photometer_looped_write(
             try:
                 session.commit()
             except Exception:
-                pub.sendMessage(
-                    EventType.READING, sub_event=ReadingSubEvent.SQL_ERROR, source=source
-                )
+                pub.sendMessage(ReadingEvent.SQL_ERROR, source=source)
                 log.warning("Discarding reading by SQL Integrity error: %s", dict(items[i][0]))
                 session.rollback()
             else:
-                pub.sendMessage(
-                    EventType.READING, sub_event=ReadingSubEvent.SQL_OK, source=source, count=1
-                )
+                pub.sendMessage(ReadingEvent.SQL_OK, source=source, count=1)
 
 
 # ==================
@@ -315,9 +306,7 @@ def photometer_batch_write(
             session.close()
             _photometer_looped_write(session, objs, items, source)
         else:
-            pub.sendMessage(
-                EventType.READING, sub_event=ReadingSubEvent.SQL_OK, source=source, count=len(objs)
-            )
+            pub.sendMessage(ReadingEvent.SQL_OK, source=source, count=len(objs))
             session.close()
 
 
@@ -343,7 +332,5 @@ def photometer_resolved_batch_write(
             session.close()
             _photometer_looped_write(session, objs, items, source)
         else:
-            pub.sendMessage(
-                EventType.READING, sub_event=ReadingSubEvent.SQL_OK, source=source, count=len(objs)
-            )
+            pub.sendMessage(ReadingEvent.SQL_OK, source=source, count=len(objs))
             session.close()
