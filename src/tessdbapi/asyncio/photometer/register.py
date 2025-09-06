@@ -38,8 +38,7 @@ from ...util import Session, async_lru_cache
 from ...model import (
     PhotometerInfo,
     RegisterOp,
-    EventType,
-    RegisterSubEvent,
+    RegisterEvent,
     SourceType,
     INFINITE_T,
 )
@@ -389,7 +388,7 @@ def update_managed_attributes(
     )
     session.add(new_photometer)
     # self.nZPChange += 1
-    pub.sendMessage(EventType.REGISTER, sub_event=RegisterSubEvent.ZP_CHANGE, source=source)
+    pub.sendMessage(RegisterEvent.ZP_CHANGE, source=source)
 
 
 async def maybe_update_managed_attributes(
@@ -400,7 +399,7 @@ async def maybe_update_managed_attributes(
         update_managed_attributes(session, photometer, candidate, tstamp, source)
     else:
         # self.nReboot += 1
-        pub.sendMessage(EventType.REGISTER, sub_event=RegisterSubEvent.PHOT_RESET, source=source)
+        pub.sendMessage(RegisterEvent.PHOT_RESET, source=source)
         log.info(
             "Detected reboot for photometer %s (MAC = %s)", candidate.name, candidate.mac_address
         )
@@ -431,7 +430,7 @@ async def photometer_register(
         await add_brand_new_tess(session, candidate, observer_type, observer_name, place, tstamp)
         # STATS CODE
         # self.nCreation += 1
-        pub.sendMessage(EventType.REGISTER, sub_event=RegisterOp.CREATE, source=source)
+        pub.sendMessage(RegisterOp.CREATE, source=source)
         log.info(
             "Brand new photometer registered: %s (MAC = %s)",
             candidate.name,
@@ -444,7 +443,7 @@ async def photometer_register(
         # STATS CODE
         # self.nRename += 1
         await renaming_photometer(session, old_mac_entry, candidate, tstamp)
-        pub.sendMessage(EventType.REGISTER, sub_event=RegisterOp.RENAME, source=source)
+        pub.sendMessage(RegisterOp.RENAME, source=source)
         log.info(
             "Renamed photometer %s (MAC = %s) with brand new name %s",
             old_mac_entry.name,
@@ -459,7 +458,7 @@ async def photometer_register(
         # STATS CODE
         # self.nReplace += 1
         await replacing_photometer(session, old_name_entry, candidate, tstamp)
-        pub.sendMessage(EventType.REGISTER,sub_event=RegisterOp.REPLACE, source=source)
+        pub.sendMessage(RegisterOp.REPLACE, source=source)
         log.info(
             "Replaced photometer tagged %s (old MAC = %s) with new one with MAC %s",
             old_name_entry.name,
@@ -488,7 +487,7 @@ async def photometer_register(
             )
             log.warning("Label %s has no associated photometer now!", old_mac_entry.name)
             await override_associations(session, old_mac_entry, old_name_entry, candidate, tstamp)
-            pub.sendMessage(EventType.REGISTER, sub_event=RegisterOp.EXTINCT, source=source)
+            pub.sendMessage(RegisterOp.EXTINCT, source=source)
 
     if dry_run:
         log.warning("Dry run mode. Database not written")

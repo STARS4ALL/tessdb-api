@@ -46,36 +46,38 @@ STARS4ALL_NAME_PATTERN = re.compile(r"^stars\d{1,7}$")
 IMPOSSIBLE_TEMPERATURE = -273.15
 IMPOSSIBLE_SIGNAL_STRENGTH = 99
 
-class RegisterOp(StrEnum):
-    CREATE = "CR"
-    RENAME = "RN"
-    REPLACE = "RP"
-    EXTINCT = "XX"
 
 class SourceType(Enum):
     MQTT = auto()  # readings comming from MQTT real Time
     GRAFANA = auto()  # readings from Bulk import from Grafana
     LOGFILE = auto()  # readings recovered by log file
 
-class EventType(StrEnum):
-    REGISTER = "Register"
-    READING = "Reading"
+class RegisterOp(StrEnum):
+    CREATE = "CR"
+    RENAME = "RN"
+    REPLACE = "RP"
+    EXTINCT = "XX"
 
-class RegisterSubEvent(Enum):
-    ZP_CHANGE = auto()
-    PHOT_RESET = auto()
+
+class RegisterEvent(StrEnum):
+    ZP_CHANGE = "Zero Point change"
+    PHOT_RESET = "Photometer reset"
+
 
 class ReadingEvent(StrEnum):
     SQL_OK = "SQL ok"
     SQL_ERROR = "SQL error"
     NOT_AUTHORISED = "Not Authorised"
     HASH_MISMATCH = "Hash mismatch"
-    NOT_REGISTERED ="Not Registered"
+    NOT_REGISTERED = "Not Registered"
     WRITE_REQUEST = "Write request"
 
+
 EARTH_RADIUS = 6371009.0  # in meters
-GEO_COORD_EPSILON = (2 / EARTH_RADIUS) * (180 / pi) # in degrees
-INFINITE_T = datetime(year=2999, month=12, day=31, hour=23, minute=59, second=59, tzinfo=timezone.utc)
+GEO_COORD_EPSILON = (2 / EARTH_RADIUS) * (180 / pi)  # in degrees
+INFINITE_T = datetime(
+    year=2999, month=12, day=31, hour=23, minute=59, second=59, tzinfo=timezone.utc
+)
 
 # --------------------
 # Validation functions
@@ -145,6 +147,7 @@ def is_hash(value: str) -> str:
     if not (len(value) == 3 and value.lower().isalnum()):
         raise ValueError(f"hash {value} outside [A-Z1-9] range")
     return value
+
 
 # --------------------
 # Pydantic annotations
@@ -288,8 +291,10 @@ class ReadingInfo4c(BaseModel):
     signal_strength: Optional[int] = IMPOSSIBLE_SIGNAL_STRENGTH  # Tesstractor does not provide this
     hash: Optional[HashType] = None
 
+
 # For type hints
 ReadingInfo = Union[ReadingInfo1c, ReadingInfo4c]
+
 
 class ReferencesInfo(BaseModel):
     """Reading foreign references to other tables"""
