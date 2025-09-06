@@ -273,7 +273,7 @@ def photometer_batch_write(
     auth_filter: bool,
     latest: bool,
     units_choice: SourceType,
-    dry_run: Optional[bool],
+    dry_run: bool,
 ) -> None:
     session.begin()
     references = resolve_references_seq(
@@ -306,7 +306,7 @@ def photometer_batch_write(
 def photometer_resolved_batch_write(
     session: Session,
     items: Sequence[Tuple[ReadingInfo, ReferencesInfo]],
-    dry_run: Optional[bool],
+    dry_run: bool,
 ) -> None:
     session.begin()
     objs = tuple(new_dbobject(reading, reference) for reading, reference in items)
@@ -334,6 +334,6 @@ def tess_batch_write(
     auth_filter: bool = False,
     latest: bool = False,
     units_choice: SourceType = SourceType.MQTT,
-    dry_run: Optional[bool] = False,
+    dry_run: bool = False,
 ) -> None:
     photometer_batch_write(session, readings, auth_filter, latest, units_choice, dry_run)

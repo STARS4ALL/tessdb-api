@@ -28,7 +28,6 @@ from tessdbdao import (
     ValidState,
 )
 
-
 from tessdbdao.noasync import Location, Observer, NameMapping, Tess
 
 # --------------
@@ -36,7 +35,14 @@ from tessdbdao.noasync import Location, Observer, NameMapping, Tess
 # -------------
 
 from ...util import Session
-from ...model import PhotometerInfo, RegisterOp,  EventType, RegisterEventType, SourceType, INFINITE_T
+from ...model import (
+    PhotometerInfo,
+    RegisterOp,
+    EventType,
+    RegisterEventType,
+    SourceType,
+    INFINITE_T,
+)
 
 ZP_EPS = 0.005
 FREQ_EPS = 0.001
@@ -345,7 +351,11 @@ def changed_managed_attributes(photometer: Tess, candidate: PhotometerInfo) -> b
 
 
 def update_managed_attributes(
-    session: Session, photometer: Tess, candidate: PhotometerInfo, tstamp: datetime
+    session: Session,
+    photometer: Tess,
+    candidate: PhotometerInfo,
+    tstamp: datetime,
+    source: SourceType,
 ) -> None:
     photometer.valid_until = tstamp
     photometer.valid_state = ValidState.EXPIRED
@@ -378,7 +388,7 @@ def update_managed_attributes(
     )
     session.add(new_photometer)
     # self.nZPChange += 1
-    pub.sendMessage(EventType.REGISTER, sub_event=RegisterEventType.ZP_CHANGE)
+    pub.sendMessage(EventType.REGISTER, source=source, sub_event=RegisterEventType.ZP_CHANGE)
 
 
 def maybe_update_managed_attributes(
@@ -386,7 +396,7 @@ def maybe_update_managed_attributes(
 ) -> None:
     photometer = find_photometer_by_name(session, candidate.name)
     if changed_managed_attributes(photometer, candidate):
-        update_managed_attributes(session, photometer, candidate, tstamp)
+        update_managed_attributes(session, photometer, candidate, tstamp, source)
     else:
         # self.nReboot += 1
         pub.sendMessage(EventType.REGISTER, source=source, sub_event=RegisterEventType.PHOT_RESET)
@@ -408,7 +418,7 @@ def photometer_register(
     observer_type: Optional[ObserverType] = None,
     tstamp: Optional[datetime] = None,
     source: SourceType = SourceType.MQTT,
-    dry_run: Optional[bool] = False,
+    dry_run: bool = False,
 ) -> None:
     tstamp = tstamp or (datetime.now(timezone.utc) + timedelta(seconds=0.5)).replace(microsecond=0)
     old_mac_entry = lookup_mac(session, candidate.mac_address)
