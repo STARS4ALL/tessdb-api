@@ -224,7 +224,6 @@ def tess4c_new(
         mag3=reading.mag3,
         freq4=reading.freq4,
         mag4=reading.mag4,
-        magnitude=reading.magnitude,
         box_temperature=reading.box_temperature,
         sky_temperature=reading.sky_temperature,
         azimuth=reading.azimuth,
