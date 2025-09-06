@@ -131,12 +131,12 @@ def resolve_references(
     latest: bool,
     units_choice: UnitsChoice,
 ) -> Optional[ReferencesInfo]:
-    pub.sendMessage("nreadings")
+    pub.sendMessage("Write Request")
     units_id = resolve_units_id(session, units_choice)
     try:
         phot = find_photometer_by_name(session, reading.name, reading.hash, reading.tstamp, latest)
         if phot is None:
-            pub.sendMessage("rejNotRegistered")
+            pub.sendMessage("Not Registered")
             log.warning(
                 "No TESS %s registered ! => %s",
                 reading.name,
@@ -144,13 +144,13 @@ def resolve_references(
             )
             return None
     except HashMismatchError as e:
-        pub.sendMessage("nreadings")
-        log.error("photometer %s hash mismatch: %s", reading.name, str(e))
+        pub.sendMessage("Has Mismatch")
+        log.warning("[%s] Reading rejected by hash mismatch: %s => %s", reading.name, str(e), dict(reading))
         return None
     else:
         if auth_filter and not phot.authorised:
+            pub.sendMessage("Not Authorised")
             log.warning("[%s]: Not authorised: %s", reading.name, dict(reading))
-            pub.sendMessage("rejNotAuthorised")
             return None
         date_id, time_id = split_datetime(reading.tstamp)
         return ReferencesInfo(
@@ -246,14 +246,16 @@ def _photometer_looped_write(
             try:
                 session.commit()
             except Exception:
+                pub.sendMessage("SQL Error")
                 log.warning("Discarding reading by SQL Integrity error: %s", dict(items[i][0]))
                 session.rollback()
+            else:
+                pub.sendMessage("SQL ok", count=1)
 
 
 # ==================
 # READING PROCESSING
 # ==================
-
 
 def photometer_batch_write(
     session: Session,
@@ -288,6 +290,7 @@ def photometer_batch_write(
             session.close()
             _photometer_looped_write(session, objs, items)
         else:
+            pub.sendMessage("SQL ok", count=len(objs))
             session.close()
 
 
@@ -304,7 +307,7 @@ def tess_batch_write(
 
 def tess4c_batch_write(
     session: Session,
-    readings: Sequence[ReadingInfo],
+    readings: Sequence[ReadingInfo4c],
     auth_filter: bool = False,
     latest: bool = False,
     units_choice: UnitsChoice = UnitsChoice.MQTT,
