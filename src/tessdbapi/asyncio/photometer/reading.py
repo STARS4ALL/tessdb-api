@@ -10,7 +10,7 @@
 
 import logging
 from datetime import datetime
-from typing import Optional, Tuple, Iterable, Sequence, List, Callable, Union
+from typing import Optional, Tuple, Iterable, Sequence, List, Union
 
 # -------------------
 # Third party imports
@@ -128,10 +128,10 @@ async def resolve_references(
     reading: ReadingInfo,
     auth_filter: bool,
     latest: bool,
-    units_choice: SourceType,
+    source: SourceType,
 ) -> Optional[ReferencesInfo]:
     pub.sendMessage("nreadings")
-    units_id = await resolve_units_id(session, units_choice)
+    units_id = await resolve_units_id(session, source)
     try:
         phot = await find_photometer_by_name(
             session, reading.name, reading.hash, reading.tstamp, latest
@@ -171,10 +171,10 @@ async def resolve_references_seq(
     readings: Sequence[ReadingInfo],
     auth_filter: bool,
     latest: bool,
-    units_choice: SourceType,
+    source: SourceType,
 ) -> List[Optional[ReferencesInfo]]:
     return [
-        await resolve_references(session, reading, auth_filter, latest, units_choice)
+        await resolve_references(session, reading, auth_filter, latest, source)
         for reading in readings
     ]
 
@@ -271,8 +271,8 @@ async def photometer_batch_write(
     readings: Iterable[ReadingInfo],
     auth_filter: bool,
     latest: bool,
-    units_choice: SourceType,
-    dry_run: Optional[bool],
+    source: SourceType,
+    dry_run: bool,
 ) -> None:
     await session.begin()
     references = await resolve_references_seq(
@@ -280,7 +280,7 @@ async def photometer_batch_write(
         readings,
         auth_filter,
         latest,
-        units_choice,
+        source,
     )
     items = tuple(filter(lambda x: x[1] is not None, zip(readings, references)))
     objs = tuple(new_dbobject(reading, reference) for reading, reference in items)
@@ -304,7 +304,7 @@ async def photometer_batch_write(
 async def photometer_resolved_batch_write(
     session: Session,
     items: Sequence[Tuple[ReadingInfo, ReferencesInfo]],
-    dry_run: Optional[bool],
+    dry_run: bool,
 ) -> None:
     await session.begin()
     objs = tuple(new_dbobject(reading, reference) for reading, reference in items)
@@ -325,12 +325,12 @@ async def photometer_resolved_batch_write(
             pub.sendMessage("SQL ok", count=len(objs))
             await session.close()
 
-async def tess_batch_write(
+async def photometer_batch_write(
     session: Session,
     readings: Sequence[ReadingInfo1c],
     auth_filter: bool = False,
     latest: bool = False,
-    units_choice: SourceType = SourceType.MQTT,
-    dry_run: Optional[bool] = False,
+    source: SourceType = SourceType.MQTT,
+    dry_run: bool = False,
 ) -> None:
-    await photometer_batch_write(session, readings, auth_filter, latest, units_choice, dry_run)
+    await photometer_batch_write(session, readings, auth_filter, latest, source, dry_run)

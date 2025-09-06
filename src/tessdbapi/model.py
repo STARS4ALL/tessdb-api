@@ -61,9 +61,17 @@ class EventType(StrEnum):
     REGISTER = "Register"
     READING = "Reading"
 
-class RegisterEventType(Enum):
+class RegisterSubEvent(Enum):
     ZP_CHANGE = auto()
     PHOT_RESET = auto()
+
+class ReadingSubEvent(Enum):
+    SQL_OK = auto()
+    SQL_ERROR = auto()
+    NOT_AUTHORISED = auto()
+    HASH_MISMATCH = auto()
+    NOT_REGISTERED = auto()
+    WRITE_REQUEST = auto()
 
 EARTH_RADIUS = 6371009.0  # in meters
 GEO_COORD_EPSILON = (2 / EARTH_RADIUS) * (180 / pi) # in degrees

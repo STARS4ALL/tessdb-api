@@ -17,7 +17,7 @@ from tessdbapi.asyncio.photometer.reading import (
     resolve_references,
     tess_new,
     tess4c_new,
-    tess_batch_write,
+    photometer_batch_write,
 )
 
 from . import engine, Session
@@ -63,7 +63,7 @@ async def test_reading_nonexists(database, stars8000r1):
             reading=stars8000r1,
             auth_filter=False,
             latest=False,
-            units_choice=SourceType.LOGFILE,
+            source=SourceType.LOGFILE,
         )
         assert ref is None
 
@@ -76,7 +76,7 @@ async def test_reading_wrong_hash(database, stars1r1_wrong_hash):
             reading=stars1r1_wrong_hash,
             auth_filter=False,
             latest=False,
-            units_choice=SourceType.LOGFILE,
+            source=SourceType.LOGFILE,
         )
         assert ref is None
 
@@ -89,7 +89,7 @@ async def test_reading_good_hash(database, stars1r1_good_hash):
             reading=stars1r1_good_hash,
             auth_filter=False,
             latest=False,
-            units_choice=SourceType.LOGFILE,
+            source=SourceType.LOGFILE,
         )
         assert ref is not None
 
@@ -102,7 +102,7 @@ async def test_reading_authorization(database, stars100r1, stars1r1):
             reading=stars1r1,
             auth_filter=True,
             latest=False,
-            units_choice=SourceType.LOGFILE,
+            source=SourceType.LOGFILE,
         )
         assert ref is not None
         ref = await resolve_references(
@@ -110,7 +110,7 @@ async def test_reading_authorization(database, stars100r1, stars1r1):
             reading=stars100r1,
             auth_filter=True,
             latest=False,
-            units_choice=SourceType.LOGFILE,
+            source=SourceType.LOGFILE,
         )
         assert ref is None
 
@@ -123,7 +123,7 @@ async def test_reading_write_1(database, stars1r1):
             reading=stars1r1,
             auth_filter=False,
             latest=False,
-            units_choice=SourceType.LOGFILE,
+            source=SourceType.LOGFILE,
         )
         if ref is not None:
             obj = tess_new(
@@ -140,7 +140,7 @@ async def test_reading_write_1(database, stars1r1):
 
 @pytest.mark.asyncio
 async def test_reading_write_4(database, stars1_sparse):
-    await tess_batch_write(database, stars1_sparse)
+    await photometer_batch_write(database, stars1_sparse)
     async with database.begin():
         readings = await fetch_readings(database)
     assert len(readings) == 4
@@ -148,11 +148,11 @@ async def test_reading_write_4(database, stars1_sparse):
 
 @pytest.mark.asyncio
 async def test_reading_write_dup(database, stars1_sparse, stars1_dense):
-    await tess_batch_write(database, stars1_sparse)
+    await photometer_batch_write(database, stars1_sparse)
     async with database.begin():
         readings = await fetch_readings(database)
     assert len(readings) == 4
-    await tess_batch_write(database, stars1_dense)
+    await photometer_batch_write(database, stars1_dense)
     async with database.begin():
         readings = await fetch_readings(database)
     assert len(readings) == 10
@@ -160,14 +160,14 @@ async def test_reading_write_dup(database, stars1_sparse, stars1_dense):
 
 @pytest.mark.asyncio
 async def test_reading_write_dup2(database, stars1_sparse_dup):
-    await tess_batch_write(database, stars1_sparse_dup)
+    await photometer_batch_write(database, stars1_sparse_dup)
     async with database.begin():
         readings = await fetch_readings(database)
     assert len(readings) == 3
 
 @pytest.mark.asyncio
 async def test_reading_write_mixed(database, stars1_mixed):
-    await tess_batch_write(database, stars1_mixed)
+    await photometer_batch_write(database, stars1_mixed)
     async with database.begin():
         readings = await fetch_readings(database)
     assert len(readings) == len(stars1_mixed) - 2
@@ -180,7 +180,7 @@ async def test_reading4c_write_1(database, stars701):
             reading=stars701,
             auth_filter=False,
             latest=False,
-            units_choice=SourceType.LOGFILE,
+            source=SourceType.LOGFILE,
         )
         if ref is not None:
             obj = tess4c_new(
@@ -196,7 +196,7 @@ async def test_reading4c_write_1(database, stars701):
 
 @pytest.mark.asyncio
 async def test_reading4c_write_1b(database, stars701):
-    await tess_batch_write(database, [stars701,])
+    await photometer_batch_write(database, [stars701,])
     async with database.begin():
         readings = await fetch_readings4c(database)
     assert len(readings) == 1
@@ -204,14 +204,14 @@ async def test_reading4c_write_1b(database, stars701):
 
 @pytest.mark.asyncio
 async def test_reading4c_write_5(database, stars701_seq):
-    await tess_batch_write(database, stars701_seq)
+    await photometer_batch_write(database, stars701_seq)
     async with database.begin():
         readings = await fetch_readings4c(database)
     assert len(readings) == 5
 
 @pytest.mark.asyncio
 async def test_reading4c_write_mixed(database, stars_mixed):
-    await tess_batch_write(database, stars_mixed)
+    await photometer_batch_write(database, stars_mixed)
     async with database.begin():
         readings_1 = await fetch_readings(database)
         readings_2 = await fetch_readings4c(database)
