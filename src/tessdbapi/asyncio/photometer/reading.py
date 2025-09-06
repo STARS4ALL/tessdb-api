@@ -35,7 +35,15 @@ from tessdbdao.asyncio import Units, NameMapping, Tess, Tess4cReadings, TessRead
 # -------------
 
 from ...util import Session, async_lru_cache
-from ...model import SourceType, ReferencesInfo, ReadingInfo1c, ReadingInfo4c, ReadingInfo
+from ...model import (
+    SourceType,
+    ReferencesInfo,
+    ReadingInfo1c,
+    ReadingInfo4c,
+    ReadingInfo,
+    EventType,
+    ReadingSubEvent,
+)
 
 # ----------------
 # Global variables
@@ -130,14 +138,16 @@ async def resolve_references(
     latest: bool,
     source: SourceType,
 ) -> Optional[ReferencesInfo]:
-    pub.sendMessage("nreadings")
+    pub.sendMessage(EventType.READING, sub_event=ReadingSubEvent.WRITE_REQUEST, source=source)
     units_id = await resolve_units_id(session, source)
     try:
         phot = await find_photometer_by_name(
             session, reading.name, reading.hash, reading.tstamp, latest
         )
         if phot is None:
-            pub.sendMessage("Not Registered")
+            pub.sendMessage(
+                EventType.READING, sub_event=ReadingSubEvent.NOT_REGISTERED, source=source
+            )
             log.warning(
                 "No TESS %s registered ! => %s",
                 reading.name,
@@ -145,14 +155,16 @@ async def resolve_references(
             )
             return None
     except HashMismatchError as e:
-        pub.sendMessage("Has Mismatch")
+        pub.sendMessage(EventType.READING, sub_event=ReadingSubEvent.HASH_MISMATCH, source=source)
         log.warning(
             "[%s] Reading rejected by hash mismatch: %s => %s", reading.name, str(e), dict(reading)
         )
         return None
     else:
         if auth_filter and not phot.authorised:
-            pub.sendMessage("Not Authorised")
+            pub.sendMessage(
+                EventType.READING, sub_event=ReadingSubEvent.NOT_AUTHORISED, source=source
+            )
             log.warning("[%s]: Not authorised: %s", reading.name, dict(reading))
             return None
         date_id, time_id = split_datetime(reading.tstamp)
@@ -246,6 +258,7 @@ async def _photometer_looped_write(
     session: Session,
     dbobjs: Iterable[PhotReadings],
     items: Sequence[Tuple[ReadingInfo1c, ReferencesInfo]],
+    source: SourceType,
 ):
     """One by one commit of database records"""
     for i, dbobj in enumerate(dbobjs):
@@ -254,11 +267,15 @@ async def _photometer_looped_write(
             try:
                 await session.commit()
             except Exception:
-                pub.sendMessage("SQL Error")
+                pub.sendMessage(
+                    EventType.READING, sub_event=ReadingSubEvent.SQL_ERROR, source=source
+                )
                 log.warning("Discarding reading by SQL Integrity error: %s", dict(items[i][0]))
                 session.rollback()
             else:
-                pub.sendMessage("SQL ok", count=1)
+               pub.sendMessage(
+                    EventType.READING, sub_event=ReadingSubEvent.SQL_OK, source=source, count=1
+                )
 
 
 # ==================
@@ -269,10 +286,10 @@ async def _photometer_looped_write(
 async def photometer_batch_write(
     session: Session,
     readings: Iterable[ReadingInfo],
-    auth_filter: bool,
-    latest: bool,
-    source: SourceType,
-    dry_run: bool,
+    auth_filter: bool = False,
+    latest: bool = True,
+    source: SourceType = SourceType.MQTT,
+    dry_run: bool = False,
 ) -> None:
     await session.begin()
     references = await resolve_references_seq(
@@ -296,15 +313,18 @@ async def photometer_batch_write(
             log.info("Looping %d readings one by one.", len(objs))
             await session.rollback()
             await session.close()
-            await _photometer_looped_write(session, objs, items)
+            await _photometer_looped_write(session, objs, items, source)
         else:
-            pub.sendMessage("SQL ok", count=len(objs))
+            pub.sendMessage(
+                EventType.READING, sub_event=ReadingSubEvent.SQL_OK, source=source, count=len(objs)
+            )
             await session.close()
 
 async def photometer_resolved_batch_write(
     session: Session,
     items: Sequence[Tuple[ReadingInfo, ReferencesInfo]],
-    dry_run: bool,
+    source: SourceType = SourceType.MQTT,
+    dry_run: bool = False,
 ) -> None:
     await session.begin()
     objs = tuple(new_dbobject(reading, reference) for reading, reference in items)
@@ -320,17 +340,9 @@ async def photometer_resolved_batch_write(
             log.info("Looping %d readings one by one.", len(objs))
             await session.rollback()
             await session.close()
-            await _photometer_looped_write(session, objs, items)
+            await _photometer_looped_write(session, objs, items, source)
         else:
-            pub.sendMessage("SQL ok", count=len(objs))
+            pub.sendMessage(
+                EventType.READING, sub_event=ReadingSubEvent.SQL_OK, source=source, count=len(objs)
+            )
             await session.close()
-
-async def photometer_batch_write(
-    session: Session,
-    readings: Sequence[ReadingInfo1c],
-    auth_filter: bool = False,
-    latest: bool = False,
-    source: SourceType = SourceType.MQTT,
-    dry_run: bool = False,
-) -> None:
-    await photometer_batch_write(session, readings, auth_filter, latest, source, dry_run)
