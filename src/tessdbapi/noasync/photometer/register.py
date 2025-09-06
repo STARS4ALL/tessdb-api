@@ -36,7 +36,7 @@ from tessdbdao.noasync import Location, Observer, NameMapping, Tess
 # -------------
 
 from ...util import Session
-from ...model import PhotometerInfo, RegisterOp,  INFINITE_T
+from ...model import PhotometerInfo, RegisterOp,  EventType, RegisterEventType, SourceType, INFINITE_T
 
 ZP_EPS = 0.005
 FREQ_EPS = 0.001
@@ -378,18 +378,18 @@ def update_managed_attributes(
     )
     session.add(new_photometer)
     # self.nZPChange += 1
-    pub.sendMessage("ZP change")
+    pub.sendMessage(EventType.REGISTER, sub_event=RegisterEventType.ZP_CHANGE)
 
 
 def maybe_update_managed_attributes(
-    session: Session, candidate: PhotometerInfo, tstamp: datetime
+    session: Session, candidate: PhotometerInfo, tstamp: datetime, source: SourceType
 ) -> None:
     photometer = find_photometer_by_name(session, candidate.name)
     if changed_managed_attributes(photometer, candidate):
         update_managed_attributes(session, photometer, candidate, tstamp)
     else:
         # self.nReboot += 1
-        pub.sendMessage("Photometer reset")
+        pub.sendMessage(EventType.REGISTER, source=source, sub_event=RegisterEventType.PHOT_RESET)
         log.info(
             "Detected reboot for photometer %s (MAC = %s)", candidate.name, candidate.mac_address
         )
@@ -407,6 +407,7 @@ def photometer_register(
     observer_name: Optional[str] = None,
     observer_type: Optional[ObserverType] = None,
     tstamp: Optional[datetime] = None,
+    source: SourceType = SourceType.MQTT,
     dry_run: Optional[bool] = False,
 ) -> None:
     tstamp = tstamp or (datetime.now(timezone.utc) + timedelta(seconds=0.5)).replace(microsecond=0)
@@ -419,7 +420,7 @@ def photometer_register(
         add_brand_new_tess(session, candidate, observer_type, observer_name, place, tstamp)
         # STATS CODE
         # self.nCreation += 1
-        pub.sendMessage(RegisterOp.CREATE)
+        pub.sendMessage(EventType.REGISTER, source=source, sub_event=RegisterOp.CREATE)
         log.info(
             "Brand new photometer registered: %s (MAC = %s)",
             candidate.name,
@@ -432,7 +433,7 @@ def photometer_register(
         # STATS CODE
         # self.nRename += 1
         renaming_photometer(session, old_mac_entry, candidate, tstamp)
-        pub.sendMessage(RegisterOp.RENAME)
+        pub.sendMessage(EventType.REGISTER, source=source, sub_event=RegisterOp.RENAME)
         log.info(
             "Renamed photometer %s (MAC = %s) with brand new name %s",
             old_mac_entry.name,
@@ -447,7 +448,7 @@ def photometer_register(
         # STATS CODE
         # self.nReplace += 1
         replacing_photometer(session, old_name_entry, candidate, tstamp)
-        pub.sendMessage(RegisterOp.REPLACE)
+        pub.sendMessage(EventType.REGISTER, source=source, sub_event=RegisterOp.REPLACE)
         log.info(
             "Replaced photometer tagged %s (old MAC = %s) with new one with MAC %s",
             old_name_entry.name,
@@ -463,7 +464,7 @@ def photometer_register(
             candidate.name == old_mac_entry.name
             and candidate.mac_address == old_name_entry.mac_address
         ):
-            maybe_update_managed_attributes(session, candidate, tstamp)
+            maybe_update_managed_attributes(session, candidate, tstamp, source)
         else:
             log.info(
                 "Overridden associations (%s -> %s) and (%s -> %s) with new (%s -> %s) association data",
@@ -476,7 +477,7 @@ def photometer_register(
             )
             log.warning("Label %s has no associated photometer now!", old_mac_entry.name)
             override_associations(session, old_mac_entry, old_name_entry, candidate, tstamp)
-            pub.sendMessage(RegisterOp.EXTINCT)
+            pub.sendMessage(EventType.REGISTER, source=source, sub_event=RegisterOp.EXTINCT)
 
     if dry_run:
         log.warning("Dry run mode. Database not written")

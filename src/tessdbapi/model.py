@@ -57,9 +57,13 @@ class SourceType(Enum):
     GRAFANA = auto()  # readings from Bulk import from Grafana
     LOGFILE = auto()  # readings recovered by log file
 
-class EventType(Enum):
-    REGISTER = auto()
-    READING= auto()
+class EventType(StrEnum):
+    REGISTER = "Register"
+    READING = "Reading"
+
+class RegisterEventType(Enum):
+    ZP_CHANGE = auto()
+    PHOT_RESET = auto()
 
 EARTH_RADIUS = 6371009.0  # in meters
 GEO_COORD_EPSILON = (2 / EARTH_RADIUS) * (180 / pi) # in degrees
