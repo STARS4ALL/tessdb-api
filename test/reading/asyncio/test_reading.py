@@ -12,7 +12,7 @@ from lica.sqlalchemy import sqa_logging
 
 from tessdbdao.asyncio import TessReadings, Tess4cReadings
 
-from tessdbapi.model import ReadingInfo1c, UnitsChoice
+from tessdbapi.model import ReadingInfo1c, SourceType
 from tessdbapi.asyncio.photometer.reading import (
     resolve_references,
     tess_new,
@@ -63,7 +63,7 @@ async def test_reading_nonexists(database, stars8000r1):
             reading=stars8000r1,
             auth_filter=False,
             latest=False,
-            units_choice=UnitsChoice.LOGFILE,
+            units_choice=SourceType.LOGFILE,
         )
         assert ref is None
 
@@ -76,7 +76,7 @@ async def test_reading_wrong_hash(database, stars1r1_wrong_hash):
             reading=stars1r1_wrong_hash,
             auth_filter=False,
             latest=False,
-            units_choice=UnitsChoice.LOGFILE,
+            units_choice=SourceType.LOGFILE,
         )
         assert ref is None
 
@@ -89,7 +89,7 @@ async def test_reading_good_hash(database, stars1r1_good_hash):
             reading=stars1r1_good_hash,
             auth_filter=False,
             latest=False,
-            units_choice=UnitsChoice.LOGFILE,
+            units_choice=SourceType.LOGFILE,
         )
         assert ref is not None
 
@@ -102,7 +102,7 @@ async def test_reading_authorization(database, stars100r1, stars1r1):
             reading=stars1r1,
             auth_filter=True,
             latest=False,
-            units_choice=UnitsChoice.LOGFILE,
+            units_choice=SourceType.LOGFILE,
         )
         assert ref is not None
         ref = await resolve_references(
@@ -110,7 +110,7 @@ async def test_reading_authorization(database, stars100r1, stars1r1):
             reading=stars100r1,
             auth_filter=True,
             latest=False,
-            units_choice=UnitsChoice.LOGFILE,
+            units_choice=SourceType.LOGFILE,
         )
         assert ref is None
 
@@ -123,7 +123,7 @@ async def test_reading_write_1(database, stars1r1):
             reading=stars1r1,
             auth_filter=False,
             latest=False,
-            units_choice=UnitsChoice.LOGFILE,
+            units_choice=SourceType.LOGFILE,
         )
         if ref is not None:
             obj = tess_new(
@@ -180,7 +180,7 @@ async def test_reading4c_write_1(database, stars701):
             reading=stars701,
             auth_filter=False,
             latest=False,
-            units_choice=UnitsChoice.LOGFILE,
+            units_choice=SourceType.LOGFILE,
         )
         if ref is not None:
             obj = tess4c_new(

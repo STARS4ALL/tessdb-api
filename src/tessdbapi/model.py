@@ -52,12 +52,14 @@ class RegisterOp(StrEnum):
     REPLACE = "RP"
     EXTINCT = "XX"
 
-class UnitsChoice(Enum):
-    MQTT = auto()  # Units for readings comming from MQTT real Time
-    GRAFANA = auto()  # Bulk import from Grafana
-    LOGFILE = auto()  # Readings recovered by log file
+class SourceType(Enum):
+    MQTT = auto()  # readings comming from MQTT real Time
+    GRAFANA = auto()  # readings from Bulk import from Grafana
+    LOGFILE = auto()  # readings recovered by log file
 
-
+class EventType(Enum):
+    REGISTER = auto()
+    READING= auto()
 
 EARTH_RADIUS = 6371009.0  # in meters
 GEO_COORD_EPSILON = (2 / EARTH_RADIUS) * (180 / pi) # in degrees

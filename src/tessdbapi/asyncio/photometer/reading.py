@@ -35,7 +35,7 @@ from tessdbdao.asyncio import Units, NameMapping, Tess, Tess4cReadings, TessRead
 # -------------
 
 from ...util import Session, async_lru_cache
-from ...model import UnitsChoice, ReferencesInfo, ReadingInfo1c, ReadingInfo4c, ReadingInfo
+from ...model import SourceType, ReferencesInfo, ReadingInfo1c, ReadingInfo4c, ReadingInfo
 
 # ----------------
 # Global variables
@@ -69,12 +69,12 @@ class HashMismatchError(RuntimeError):
 
 
 @async_lru_cache(maxsize=10)
-async def resolve_units_id(session: Session, choice: UnitsChoice) -> int:
+async def resolve_units_id(session: Session, choice: SourceType) -> int:
     """For readings recovery/batch uploads"""
-    if choice == UnitsChoice.GRAFANA:
+    if choice == SourceType.GRAFANA:
         target_timestamp_source = TimestampSource.PUBLISHER
         target_reading_source = ReadingSource.IMPORTED
-    elif choice == UnitsChoice.LOGFILE:
+    elif choice == SourceType.LOGFILE:
         target_timestamp_source = TimestampSource.SUBSCRIBER
         target_reading_source = ReadingSource.IMPORTED
     else:
@@ -128,7 +128,7 @@ async def resolve_references(
     reading: ReadingInfo,
     auth_filter: bool,
     latest: bool,
-    units_choice: UnitsChoice,
+    units_choice: SourceType,
 ) -> Optional[ReferencesInfo]:
     pub.sendMessage("nreadings")
     units_id = await resolve_units_id(session, units_choice)
@@ -171,7 +171,7 @@ async def resolve_references_seq(
     readings: Sequence[ReadingInfo],
     auth_filter: bool,
     latest: bool,
-    units_choice: UnitsChoice,
+    units_choice: SourceType,
 ) -> List[Optional[ReferencesInfo]]:
     return [
         await resolve_references(session, reading, auth_filter, latest, units_choice)
@@ -271,7 +271,7 @@ async def photometer_batch_write(
     readings: Iterable[ReadingInfo],
     auth_filter: bool,
     latest: bool,
-    units_choice: UnitsChoice,
+    units_choice: SourceType,
     dry_run: Optional[bool],
 ) -> None:
     await session.begin()
@@ -330,7 +330,7 @@ async def tess_batch_write(
     readings: Sequence[ReadingInfo1c],
     auth_filter: bool = False,
     latest: bool = False,
-    units_choice: UnitsChoice = UnitsChoice.MQTT,
+    units_choice: SourceType = SourceType.MQTT,
     dry_run: Optional[bool] = False,
 ) -> None:
     await photometer_batch_write(session, readings, auth_filter, latest, units_choice, dry_run)
