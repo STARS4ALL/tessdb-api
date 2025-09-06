@@ -36,7 +36,7 @@ from tessdbdao.noasync import Units, NameMapping, Tess, Tess4cReadings, TessRead
 # -------------
 
 from ...util import Session
-from ...model import UnitsChoice, ReferencesInfo, ReadingInfo, ReadingInfo4c
+from ...model import UnitsChoice, ReferencesInfo, ReadingInfo1c, ReadingInfo4c, ReadingInfo
 
 # ----------------
 # Global variables
@@ -145,7 +145,9 @@ def resolve_references(
             return None
     except HashMismatchError as e:
         pub.sendMessage("Has Mismatch")
-        log.warning("[%s] Reading rejected by hash mismatch: %s => %s", reading.name, str(e), dict(reading))
+        log.warning(
+            "[%s] Reading rejected by hash mismatch: %s => %s", reading.name, str(e), dict(reading)
+        )
         return None
     else:
         if auth_filter and not phot.authorised:
@@ -177,7 +179,7 @@ def resolve_references_seq(
 
 
 def tess_new(
-    reading: ReadingInfo,
+    reading: ReadingInfo1c,
     reference: ReferencesInfo,
 ) -> Tess:
     return TessReadings(
@@ -234,6 +236,13 @@ def tess4c_new(
     )
 
 
+def new_dbobject(reading: ReadingInfo, reference: ReferencesInfo) -> PhotReadings:
+    if isinstance(reading, ReadingInfo4c):
+        return tess4c_new(reading, reference)
+    else:
+        return tess_new(reading, reference)
+
+
 def _photometer_looped_write(
     session: Session,
     dbobjs: Iterable[PhotReadings],
@@ -257,10 +266,10 @@ def _photometer_looped_write(
 # READING PROCESSING
 # ==================
 
+
 def photometer_batch_write(
     session: Session,
     readings: Iterable[ReadingInfo],
-    factory_func: Callable[[ReadingInfo, ReferencesInfo], PhotReadings],
     auth_filter: bool,
     latest: bool,
     units_choice: UnitsChoice,
@@ -275,7 +284,32 @@ def photometer_batch_write(
         units_choice,
     )
     items = tuple(filter(lambda x: x[1] is not None, zip(readings, references)))
-    objs = tuple(factory_func(reading, reference) for reading, reference in items)
+    objs = tuple(new_dbobject(reading, reference) for reading, reference in items)
+    session.add_all(objs)
+    if dry_run:
+        log.warning("Dry run mode. Database not written")
+        session.rollback()
+    else:
+        try:
+            session.commit()
+        except Exception as e:
+            log.error(str(e).split("\n")[0])
+            log.info("Looping %d readings one by one.", len(objs))
+            session.rollback()
+            session.close()
+            _photometer_looped_write(session, objs, items)
+        else:
+            pub.sendMessage("SQL ok", count=len(objs))
+            session.close()
+
+
+def photometer_resolved_batch_write(
+    session: Session,
+    items: Sequence[Tuple[ReadingInfo, ReferencesInfo]],
+    dry_run: Optional[bool],
+) -> None:
+    session.begin()
+    objs = tuple(new_dbobject(reading, reference) for reading, reference in items)
     session.add_all(objs)
     if dry_run:
         log.warning("Dry run mode. Database not written")
@@ -296,23 +330,10 @@ def photometer_batch_write(
 
 def tess_batch_write(
     session: Session,
-    readings: Sequence[ReadingInfo],
+    readings: Sequence[ReadingInfo1c],
     auth_filter: bool = False,
     latest: bool = False,
     units_choice: UnitsChoice = UnitsChoice.MQTT,
     dry_run: Optional[bool] = False,
 ) -> None:
-    photometer_batch_write(session, readings, tess_new, auth_filter, latest, units_choice, dry_run)
-
-
-def tess4c_batch_write(
-    session: Session,
-    readings: Sequence[ReadingInfo4c],
-    auth_filter: bool = False,
-    latest: bool = False,
-    units_choice: UnitsChoice = UnitsChoice.MQTT,
-    dry_run: Optional[bool] = False,
-) -> None:
-    photometer_batch_write(
-        session, readings, tess4c_new, auth_filter, latest, units_choice, dry_run
-    )
+    photometer_batch_write(session, readings, auth_filter, latest, units_choice, dry_run)

@@ -35,7 +35,7 @@ from tessdbdao.asyncio import Units, NameMapping, Tess, Tess4cReadings, TessRead
 # -------------
 
 from ...util import Session, async_lru_cache
-from ...model import UnitsChoice, ReferencesInfo, ReadingInfo, ReadingInfo4c
+from ...model import UnitsChoice, ReferencesInfo, ReadingInfo1c, ReadingInfo4c, ReadingInfo
 
 # ----------------
 # Global variables
@@ -137,7 +137,7 @@ async def resolve_references(
             session, reading.name, reading.hash, reading.tstamp, latest
         )
         if phot is None:
-            pub.sendMessage("rejNotRegistered")
+            pub.sendMessage("Not Registered")
             log.warning(
                 "No TESS %s registered ! => %s",
                 reading.name,
@@ -145,13 +145,15 @@ async def resolve_references(
             )
             return None
     except HashMismatchError as e:
-        pub.sendMessage("nreadings")
-        log.error("photometer %s hash mismatch: %s", reading.name, str(e))
+        pub.sendMessage("Has Mismatch")
+        log.warning(
+            "[%s] Reading rejected by hash mismatch: %s => %s", reading.name, str(e), dict(reading)
+        )
         return None
     else:
         if auth_filter and not phot.authorised:
+            pub.sendMessage("Not Authorised")
             log.warning("[%s]: Not authorised: %s", reading.name, dict(reading))
-            pub.sendMessage("rejNotAuthorised")
             return None
         date_id, time_id = split_datetime(reading.tstamp)
         return ReferencesInfo(
@@ -178,7 +180,7 @@ async def resolve_references_seq(
 
 
 def tess_new(
-    reading: ReadingInfo,
+    reading: ReadingInfo1c,
     reference: ReferencesInfo,
 ) -> Tess:
     return TessReadings(
@@ -234,11 +236,16 @@ def tess4c_new(
         hash=reading.hash,
     )
 
+def new_dbobject(reading: ReadingInfo, reference: ReferencesInfo) -> PhotReadings:
+    if isinstance(reading, ReadingInfo4c):
+        return tess4c_new(reading, reference)
+    else:
+        return tess_new(reading, reference)
 
 async def _photometer_looped_write(
     session: Session,
     dbobjs: Iterable[PhotReadings],
-    items: Sequence[Tuple[ReadingInfo, ReferencesInfo]],
+    items: Sequence[Tuple[ReadingInfo1c, ReferencesInfo]],
 ):
     """One by one commit of database records"""
     for i, dbobj in enumerate(dbobjs):
@@ -247,8 +254,11 @@ async def _photometer_looped_write(
             try:
                 await session.commit()
             except Exception:
+                pub.sendMessage("SQL Error")
                 log.warning("Discarding reading by SQL Integrity error: %s", dict(items[i][0]))
-                await session.rollback()
+                session.rollback()
+            else:
+                pub.sendMessage("SQL ok", count=1)
 
 
 # ==================
@@ -259,7 +269,6 @@ async def _photometer_looped_write(
 async def photometer_batch_write(
     session: Session,
     readings: Iterable[ReadingInfo],
-    factory_func: Callable[[ReadingInfo, ReferencesInfo], PhotReadings],
     auth_filter: bool,
     latest: bool,
     units_choice: UnitsChoice,
@@ -274,7 +283,7 @@ async def photometer_batch_write(
         units_choice,
     )
     items = tuple(filter(lambda x: x[1] is not None, zip(readings, references)))
-    objs = tuple(factory_func(reading, reference) for reading, reference in items)
+    objs = tuple(new_dbobject(reading, reference) for reading, reference in items)
     session.add_all(objs)
     if dry_run:
         log.warning("Dry run mode. Database not written")
@@ -289,30 +298,39 @@ async def photometer_batch_write(
             await session.close()
             await _photometer_looped_write(session, objs, items)
         else:
+            pub.sendMessage("SQL ok", count=len(objs))
             await session.close()
 
+async def photometer_resolved_batch_write(
+    session: Session,
+    items: Sequence[Tuple[ReadingInfo, ReferencesInfo]],
+    dry_run: Optional[bool],
+) -> None:
+    await session.begin()
+    objs = tuple(new_dbobject(reading, reference) for reading, reference in items)
+    session.add_all(objs)
+    if dry_run:
+        log.warning("Dry run mode. Database not written")
+        await session.rollback()
+    else:
+        try:
+            await session.commit()
+        except Exception as e:
+            log.error(str(e).split("\n")[0])
+            log.info("Looping %d readings one by one.", len(objs))
+            await session.rollback()
+            await session.close()
+            await _photometer_looped_write(session, objs, items)
+        else:
+            pub.sendMessage("SQL ok", count=len(objs))
+            await session.close()
 
 async def tess_batch_write(
     session: Session,
-    readings: Sequence[ReadingInfo],
+    readings: Sequence[ReadingInfo1c],
     auth_filter: bool = False,
     latest: bool = False,
     units_choice: UnitsChoice = UnitsChoice.MQTT,
     dry_run: Optional[bool] = False,
 ) -> None:
-    await photometer_batch_write(
-        session, readings, tess_new, auth_filter, latest, units_choice, dry_run
-    )
-
-
-async def tess4c_batch_write(
-    session: Session,
-    readings: Sequence[ReadingInfo],
-    auth_filter: bool = False,
-    latest: bool = False,
-    units_choice: UnitsChoice = UnitsChoice.MQTT,
-    dry_run: Optional[bool] = False,
-) -> None:
-    await photometer_batch_write(
-        session, readings, tess4c_new, auth_filter, latest, units_choice, dry_run
-    )
+    await photometer_batch_write(session, readings, auth_filter, latest, units_choice, dry_run)

@@ -12,7 +12,7 @@ import re
 from math import pi
 from enum import Enum, StrEnum, auto
 from datetime import datetime, timezone
-from typing import Annotated, Optional, Self
+from typing import Annotated, Optional, Union, Self
 
 # ---------------------
 # Third party libraries
@@ -231,7 +231,7 @@ class ObserverInfo(BaseModel):
     email: Optional[EmailStr] = None
 
 
-class ReadingInfo(BaseModel):
+class ReadingInfo1c(BaseModel):
     tstamp: datetime
     name: Stars4AllName
     sequence_number: int
@@ -274,6 +274,8 @@ class ReadingInfo4c(BaseModel):
     signal_strength: Optional[int] = IMPOSSIBLE_SIGNAL_STRENGTH  # Tesstractor does not provide this
     hash: Optional[HashType] = None
 
+# For type hints
+ReadingInfo = Union[ReadingInfo1c, ReadingInfo4c]
 
 class ReferencesInfo(BaseModel):
     """Reading foreign references to other tables"""
