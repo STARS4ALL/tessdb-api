@@ -11,7 +11,7 @@ from lica.sqlalchemy import sqa_logging
 
 from tessdbdao.noasync import TessReadings
 
-from tessdbapi.noasync.photometer.reading import ReadingInfo, UnitsChoice
+from tessdbapi.noasync.photometer.reading import ReadingInfo1c, UnitsChoice
 from tessdbapi.noasync.photometer.reading import (
     resolve_references,
     tess_new,
@@ -155,7 +155,7 @@ def test_reading_write_mixed(database, stars1_mixed):
 
 def test_valid_reading_1(database):
     with pytest.raises(ValidationError) as e:
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime.now(timezone.utc).replace(microsecond=0),
             name=None,
             sequence_number=1,
@@ -170,7 +170,7 @@ def test_valid_reading_1(database):
     assert excp["type"] == "string_type"
     assert excp["loc"][0] == "name"
     with pytest.raises(ValidationError) as e:
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime.now(timezone.utc).replace(microsecond=0),
             name="foo",
             sequence_number=1,
@@ -185,7 +185,7 @@ def test_valid_reading_1(database):
     assert excp["type"] == "value_error"
     assert excp["loc"][0] == "name"
     with pytest.raises(ValidationError) as e:
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime.now(timezone.utc).replace(microsecond=0),
             name="stars1024",
             sequence_number=1,
@@ -201,7 +201,7 @@ def test_valid_reading_1(database):
     assert excp["type"] == "value_error"
     assert excp["loc"][0] == "hash"
     with pytest.raises(ValidationError) as e:
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime.now(timezone.utc).replace(microsecond=0),
             name="foo",
             sequence_number=1,

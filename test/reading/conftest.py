@@ -4,11 +4,11 @@ from typing import List
 from datetime import datetime, timezone
 
 
-from tessdbapi.model import ReadingInfo
+from tessdbapi.model import ReadingInfo1c
 
 @pytest.fixture()
-def stars8000r1() -> ReadingInfo:
-    return ReadingInfo(
+def stars8000r1() -> ReadingInfo1c:
+    return ReadingInfo1c(
         tstamp=datetime(2025, 9, 4, 12, 34, 56, tzinfo=timezone.utc),
         name="stars8000",
         sequence_number=1,
@@ -21,8 +21,8 @@ def stars8000r1() -> ReadingInfo:
 
 
 @pytest.fixture()
-def stars1r1() -> ReadingInfo:
-    return ReadingInfo(
+def stars1r1() -> ReadingInfo1c:
+    return ReadingInfo1c(
         tstamp=datetime(2025, 9, 4, 12, 34, 56, tzinfo=timezone.utc),
         name="stars1",
         sequence_number=1,
@@ -34,8 +34,8 @@ def stars1r1() -> ReadingInfo:
     )
 
 @pytest.fixture()
-def stars1r1_wrong_hash() -> ReadingInfo:
-    return ReadingInfo(
+def stars1r1_wrong_hash() -> ReadingInfo1c:
+    return ReadingInfo1c(
         tstamp=datetime(2025, 9, 4, 12, 34, 56, tzinfo=timezone.utc),
         name="stars1",
         sequence_number=1,
@@ -48,8 +48,8 @@ def stars1r1_wrong_hash() -> ReadingInfo:
     )
 
 @pytest.fixture()
-def stars1r1_good_hash() -> ReadingInfo:
-    return ReadingInfo(
+def stars1r1_good_hash() -> ReadingInfo1c:
+    return ReadingInfo1c(
         tstamp=datetime(2025, 9, 4, 12, 34, 56, tzinfo=timezone.utc),
         name="stars1",
         sequence_number=1,
@@ -62,8 +62,8 @@ def stars1r1_good_hash() -> ReadingInfo:
     )
 
 @pytest.fixture()
-def stars100r1() -> ReadingInfo:
-    return ReadingInfo(
+def stars100r1() -> ReadingInfo1c:
+    return ReadingInfo1c(
         tstamp=datetime(2025, 9, 4, 12, 34, 56, tzinfo=timezone.utc),
         name="stars100",
         sequence_number=1,
@@ -76,9 +76,9 @@ def stars100r1() -> ReadingInfo:
 
 
 @pytest.fixture()
-def stars1_dense() -> List[ReadingInfo]:
+def stars1_dense() -> List[ReadingInfo1c]:
     return [
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 00, 00, tzinfo=timezone.utc),
             name="stars1",
             sequence_number=0,
@@ -88,7 +88,7 @@ def stars1_dense() -> List[ReadingInfo]:
             sky_temperature=-12,
             signal_strength=-78,
         ),
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 1, 00, tzinfo=timezone.utc),
             name="stars1",
             sequence_number=1,
@@ -98,7 +98,7 @@ def stars1_dense() -> List[ReadingInfo]:
             sky_temperature=-12,
             signal_strength=-78,
         ),
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 2, 00, tzinfo=timezone.utc),
             name="stars1",
             sequence_number=2,
@@ -108,7 +108,7 @@ def stars1_dense() -> List[ReadingInfo]:
             sky_temperature=-12,
             signal_strength=-78,
         ),
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 3, 00, tzinfo=timezone.utc),
             name="stars1",
             sequence_number=3,
@@ -118,7 +118,7 @@ def stars1_dense() -> List[ReadingInfo]:
             sky_temperature=-12,
             signal_strength=-78,
         ),
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 4, 00, tzinfo=timezone.utc),
             name="stars1",
             sequence_number=4,
@@ -128,7 +128,7 @@ def stars1_dense() -> List[ReadingInfo]:
             sky_temperature=-12,
             signal_strength=-78,
         ),
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 5, 00, tzinfo=timezone.utc),
             name="stars1",
             sequence_number=5,
@@ -138,7 +138,7 @@ def stars1_dense() -> List[ReadingInfo]:
             sky_temperature=-12,
             signal_strength=-78,
         ),
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 6, 00, tzinfo=timezone.utc),
             name="stars1",
             sequence_number=6,
@@ -148,7 +148,7 @@ def stars1_dense() -> List[ReadingInfo]:
             sky_temperature=-12,
             signal_strength=-78,
         ),
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 7, 00, tzinfo=timezone.utc),
             name="stars1",
             sequence_number=7,
@@ -158,7 +158,7 @@ def stars1_dense() -> List[ReadingInfo]:
             sky_temperature=-12,
             signal_strength=-78,
         ),
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 8, 00, tzinfo=timezone.utc),
             name="stars1",
             sequence_number=8,
@@ -168,7 +168,7 @@ def stars1_dense() -> List[ReadingInfo]:
             sky_temperature=-12,
             signal_strength=-78,
         ),
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 9, 00, tzinfo=timezone.utc),
             name="stars1",
             sequence_number=9,
@@ -182,9 +182,9 @@ def stars1_dense() -> List[ReadingInfo]:
 
 
 @pytest.fixture()
-def stars1_sparse() -> List[ReadingInfo]:
+def stars1_sparse() -> List[ReadingInfo1c]:
     return [
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 2, 00, tzinfo=timezone.utc),
             name="stars1",
             sequence_number=2,
@@ -194,7 +194,7 @@ def stars1_sparse() -> List[ReadingInfo]:
             sky_temperature=-12,
             signal_strength=-78,
         ),
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 3, 00, tzinfo=timezone.utc),
             name="stars1",
             sequence_number=3,
@@ -204,7 +204,7 @@ def stars1_sparse() -> List[ReadingInfo]:
             sky_temperature=-12,
             signal_strength=-78,
         ),
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 5, 00, tzinfo=timezone.utc),
             name="stars1",
             sequence_number=5,
@@ -214,7 +214,7 @@ def stars1_sparse() -> List[ReadingInfo]:
             sky_temperature=-12,
             signal_strength=-78,
         ),
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 7, 00, tzinfo=timezone.utc),
             name="stars1",
             sequence_number=7,
@@ -227,9 +227,9 @@ def stars1_sparse() -> List[ReadingInfo]:
     ]
 
 @pytest.fixture()
-def stars1_sparse_dup() -> List[ReadingInfo]:
+def stars1_sparse_dup() -> List[ReadingInfo1c]:
     return [
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 2, 00, tzinfo=timezone.utc),
             name="stars1",
             sequence_number=2,
@@ -239,7 +239,7 @@ def stars1_sparse_dup() -> List[ReadingInfo]:
             sky_temperature=-12,
             signal_strength=-78,
         ),
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 3, 00, tzinfo=timezone.utc),
             name="stars1",
             sequence_number=3,
@@ -249,7 +249,7 @@ def stars1_sparse_dup() -> List[ReadingInfo]:
             sky_temperature=-12,
             signal_strength=-78,
         ),
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 3, 00, tzinfo=timezone.utc),
             name="stars1",
             sequence_number=3,
@@ -259,7 +259,7 @@ def stars1_sparse_dup() -> List[ReadingInfo]:
             sky_temperature=-12,
             signal_strength=-78,
         ),
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 7, 00, tzinfo=timezone.utc),
             name="stars1",
             sequence_number=7,
@@ -273,9 +273,9 @@ def stars1_sparse_dup() -> List[ReadingInfo]:
 
 
 @pytest.fixture()
-def stars1_mixed() -> List[ReadingInfo]:
+def stars1_mixed() -> List[ReadingInfo1c]:
     return [
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 00, 00, tzinfo=timezone.utc),
             name="stars1",
             sequence_number=0,
@@ -285,7 +285,7 @@ def stars1_mixed() -> List[ReadingInfo]:
             sky_temperature=-12,
             signal_strength=-78,
         ),
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 1, 00, tzinfo=timezone.utc),
             name="stars1",
             sequence_number=1,
@@ -295,7 +295,7 @@ def stars1_mixed() -> List[ReadingInfo]:
             sky_temperature=-12,
             signal_strength=-78,
         ),
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 2, 00, tzinfo=timezone.utc),
             name="stars1",
             sequence_number=2,
@@ -305,7 +305,7 @@ def stars1_mixed() -> List[ReadingInfo]:
             sky_temperature=-12,
             signal_strength=-78,
         ),
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 3, 00, tzinfo=timezone.utc),
             name="stars1",
             sequence_number=3,
@@ -315,7 +315,7 @@ def stars1_mixed() -> List[ReadingInfo]:
             sky_temperature=-12,
             signal_strength=-78,
         ),
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 4, 00, tzinfo=timezone.utc),
             name="stars8000",
             sequence_number=4,
@@ -325,7 +325,7 @@ def stars1_mixed() -> List[ReadingInfo]:
             sky_temperature=-12,
             signal_strength=-78,
         ),
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 5, 00, tzinfo=timezone.utc),
             name="stars1",
             sequence_number=5,
@@ -335,7 +335,7 @@ def stars1_mixed() -> List[ReadingInfo]:
             sky_temperature=-12,
             signal_strength=-78,
         ),
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 6, 00, tzinfo=timezone.utc),
             name="stars8000",
             sequence_number=6,
@@ -345,7 +345,7 @@ def stars1_mixed() -> List[ReadingInfo]:
             sky_temperature=-12,
             signal_strength=-78,
         ),
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 7, 00, tzinfo=timezone.utc),
             name="stars1",
             sequence_number=7,
@@ -355,7 +355,7 @@ def stars1_mixed() -> List[ReadingInfo]:
             sky_temperature=-12,
             signal_strength=-78,
         ),
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 8, 00, tzinfo=timezone.utc),
             name="stars1",
             sequence_number=8,
@@ -365,7 +365,7 @@ def stars1_mixed() -> List[ReadingInfo]:
             sky_temperature=-12,
             signal_strength=-78,
         ),
-        ReadingInfo(
+        ReadingInfo1c(
             tstamp=datetime(2025, 9, 4, 00, 9, 00, tzinfo=timezone.utc),
             name="stars1",
             sequence_number=9,
