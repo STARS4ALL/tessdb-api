@@ -47,7 +47,7 @@ async def fetch_readings4c(session: Session) -> List[Tess4cReadings]:
 
 @pytest_asyncio.fixture(params=[DbSize.MEDIUM])
 async def database(request):
-    args = Namespace(verbose=False)
+    args = Namespace(verbose=True)
     sqa_logging(args)
     copy_file(f"tess.{request.param}.db", "tess.db")
     yield Session()

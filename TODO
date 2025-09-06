@@ -1,9 +1,6 @@
 
 * LECTURAS, CASOS DE PRUEBA
 
-- Casos de prueba para lectiuras de Tess4c
-- casos de prueba de batch write mezclado
-
 - Comprobar si funciona el async_lru_cache con un caso de prueba y activando las trazas SQL
 
 * API de Authorise? ¿se está usando este flag?
