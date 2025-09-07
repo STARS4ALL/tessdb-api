@@ -27,7 +27,6 @@ from tessdbdao import (
     ValidState,
 )
 
-
 from tessdbdao.asyncio import Units, NameMapping, Tess, Tess4cReadings, TessReadings
 
 # --------------
@@ -36,7 +35,6 @@ from tessdbdao.asyncio import Units, NameMapping, Tess, Tess4cReadings, TessRead
 
 from ...util import Session, async_lru_cache
 from ...model import (
-    SourceType,
     ReferencesInfo,
     ReadingInfo1c,
     ReadingInfo4c,
@@ -76,20 +74,13 @@ class HashMismatchError(RuntimeError):
 
 
 @async_lru_cache(maxsize=10)
-async def resolve_units_id(session: Session, choice: SourceType) -> int:
+async def resolve_units_id(
+    session: Session, source: ReadingSource, tstamp_src: TimestampSource
+) -> int:
     """For readings recovery/batch uploads"""
-    if choice == SourceType.GRAFANA:
-        target_timestamp_source = TimestampSource.PUBLISHER
-        target_reading_source = ReadingSource.IMPORTED
-    elif choice == SourceType.LOGFILE:
-        target_timestamp_source = TimestampSource.SUBSCRIBER
-        target_reading_source = ReadingSource.IMPORTED
-    else:
-        target_timestamp_source = TimestampSource.SUBSCRIBER
-        target_reading_source = ReadingSource.DIRECT
     query = select(Units.units_id).where(
-        Units.timestamp_source == target_timestamp_source,
-        Units.reading_source == target_reading_source,
+        Units.timestamp_source == tstamp_src,
+        Units.reading_source == source,
     )
     return (await session.scalars(query)).one()
 
@@ -135,10 +126,10 @@ async def resolve_references(
     reading: ReadingInfo,
     auth_filter: bool,
     latest: bool,
-    source: SourceType,
+    source: ReadingSource,
 ) -> Optional[ReferencesInfo]:
     pub.sendMessage(ReadingEvent.WRITE_REQUEST, source=source)
-    units_id = await resolve_units_id(session, source)
+    units_id = await resolve_units_id(session, source, reading.tstamp_src)
     try:
         phot = await find_photometer_by_name(
             session, reading.name, reading.hash, reading.tstamp, latest
@@ -178,7 +169,7 @@ async def resolve_references_seq(
     readings: Sequence[ReadingInfo],
     auth_filter: bool,
     latest: bool,
-    source: SourceType,
+    source: ReadingSource,
 ) -> List[Optional[ReferencesInfo]]:
     return [
         await resolve_references(session, reading, auth_filter, latest, source)
@@ -255,7 +246,7 @@ async def _photometer_looped_write(
     session: Session,
     dbobjs: Iterable[PhotReadings],
     items: Sequence[Tuple[ReadingInfo1c, ReferencesInfo]],
-    source: SourceType,
+    source: ReadingSource,
 ):
     """One by one commit of database records"""
     for i, dbobj in enumerate(dbobjs):
@@ -266,7 +257,7 @@ async def _photometer_looped_write(
             except Exception:
                 pub.sendMessage(ReadingEvent.SQL_ERROR, source=source)
                 log.warning("Discarding reading by SQL Integrity error: %s", dict(items[i][0]))
-                session.rollback()
+                await session.rollback()
             else:
                 pub.sendMessage(ReadingEvent.SQL_OK, source=source, count=1)
 
@@ -281,7 +272,7 @@ async def photometer_batch_write(
     readings: Iterable[ReadingInfo],
     auth_filter: bool = False,
     latest: bool = True,
-    source: SourceType = SourceType.MQTT,
+    source: ReadingSource = ReadingSource.DIRECT,
     dry_run: bool = False,
 ) -> None:
     await session.begin()
@@ -315,7 +306,7 @@ async def photometer_batch_write(
 async def photometer_resolved_batch_write(
     session: Session,
     items: Sequence[Tuple[ReadingInfo, ReferencesInfo]],
-    source: SourceType = SourceType.MQTT,
+    source: ReadingSource = ReadingSource.DIRECT,
     dry_run: bool = False,
 ) -> None:
     await session.begin()

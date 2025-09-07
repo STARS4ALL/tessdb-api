@@ -10,9 +10,10 @@ from pydantic import ValidationError
 
 from lica.sqlalchemy import sqa_logging
 
+from tessdbdao import ReadingSource
 from tessdbdao.asyncio import TessReadings, Tess4cReadings
 
-from tessdbapi.model import ReadingInfo1c, SourceType
+from tessdbapi.model import ReadingInfo1c
 from tessdbapi.asyncio.photometer.reading import (
     resolve_references,
     tess_new,
@@ -37,8 +38,11 @@ async def fetch_readings(session: Session) -> List[TessReadings]:
 
 
 async def fetch_readings4c(session: Session) -> List[Tess4cReadings]:
-    query = select(Tess4cReadings).order_by(Tess4cReadings.date_id.asc(), Tess4cReadings.time_id.asc())
+    query = select(Tess4cReadings).order_by(
+        Tess4cReadings.date_id.asc(), Tess4cReadings.time_id.asc()
+    )
     return (await session.scalars(query)).all()
+
 
 # ------------------
 # Convenient fixtures
@@ -63,7 +67,7 @@ async def test_reading_nonexists(database, stars8000r1):
             reading=stars8000r1,
             auth_filter=False,
             latest=False,
-            source=SourceType.LOGFILE,
+            source=ReadingSource.IMPORTED,
         )
         assert ref is None
 
@@ -76,7 +80,7 @@ async def test_reading_wrong_hash(database, stars1r1_wrong_hash):
             reading=stars1r1_wrong_hash,
             auth_filter=False,
             latest=False,
-            source=SourceType.LOGFILE,
+            source=ReadingSource.IMPORTED,
         )
         assert ref is None
 
@@ -89,7 +93,7 @@ async def test_reading_good_hash(database, stars1r1_good_hash):
             reading=stars1r1_good_hash,
             auth_filter=False,
             latest=False,
-            source=SourceType.LOGFILE,
+            source=ReadingSource.IMPORTED,
         )
         assert ref is not None
 
@@ -102,7 +106,7 @@ async def test_reading_authorization(database, stars100r1, stars1r1):
             reading=stars1r1,
             auth_filter=True,
             latest=False,
-            source=SourceType.LOGFILE,
+            source=ReadingSource.IMPORTED,
         )
         assert ref is not None
         ref = await resolve_references(
@@ -110,7 +114,7 @@ async def test_reading_authorization(database, stars100r1, stars1r1):
             reading=stars100r1,
             auth_filter=True,
             latest=False,
-            source=SourceType.LOGFILE,
+            source=ReadingSource.IMPORTED,
         )
         assert ref is None
 
@@ -123,7 +127,7 @@ async def test_reading_write_1(database, stars1r1):
             reading=stars1r1,
             auth_filter=False,
             latest=False,
-            source=SourceType.LOGFILE,
+            source=ReadingSource.IMPORTED,
         )
         if ref is not None:
             obj = tess_new(
@@ -165,12 +169,14 @@ async def test_reading_write_dup2(database, stars1_sparse_dup):
         readings = await fetch_readings(database)
     assert len(readings) == 3
 
+
 @pytest.mark.asyncio
 async def test_reading_write_mixed(database, stars1_mixed):
     await photometer_batch_write(database, stars1_mixed)
     async with database.begin():
         readings = await fetch_readings(database)
     assert len(readings) == len(stars1_mixed) - 2
+
 
 @pytest.mark.asyncio
 async def test_reading4c_write_1(database, stars701):
@@ -180,7 +186,7 @@ async def test_reading4c_write_1(database, stars701):
             reading=stars701,
             auth_filter=False,
             latest=False,
-            source=SourceType.LOGFILE,
+            source=ReadingSource.IMPORTED,
         )
         if ref is not None:
             obj = tess4c_new(
@@ -194,13 +200,20 @@ async def test_reading4c_write_1(database, stars701):
     assert len(readings) == 1
     assert readings[0].sequence_number == 1
 
+
 @pytest.mark.asyncio
 async def test_reading4c_write_1b(database, stars701):
-    await photometer_batch_write(database, [stars701,])
+    await photometer_batch_write(
+        database,
+        [
+            stars701,
+        ],
+    )
     async with database.begin():
         readings = await fetch_readings4c(database)
     assert len(readings) == 1
     assert readings[0].sequence_number == 1
+
 
 @pytest.mark.asyncio
 async def test_reading4c_write_5(database, stars701_seq):
@@ -208,6 +221,7 @@ async def test_reading4c_write_5(database, stars701_seq):
     async with database.begin():
         readings = await fetch_readings4c(database)
     assert len(readings) == 5
+
 
 @pytest.mark.asyncio
 async def test_reading4c_write_mixed(database, stars_mixed):

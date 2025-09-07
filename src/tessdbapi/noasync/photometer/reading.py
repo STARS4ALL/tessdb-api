@@ -37,7 +37,6 @@ from tessdbdao.noasync import Units, NameMapping, Tess, Tess4cReadings, TessRead
 
 from ...util import Session
 from ...model import (
-    SourceType,
     ReferencesInfo,
     ReadingInfo1c,
     ReadingInfo4c,
@@ -77,20 +76,11 @@ class HashMismatchError(RuntimeError):
 
 
 @lru_cache(maxsize=10)
-def resolve_units_id(session: Session, choice: SourceType) -> int:
+def resolve_units_id(session: Session, source: ReadingSource, tstamp_src: TimestampSource) -> int:
     """For readings recovery/batch uploads"""
-    if choice == SourceType.GRAFANA:
-        target_timestamp_source = TimestampSource.PUBLISHER
-        target_reading_source = ReadingSource.IMPORTED
-    elif choice == SourceType.LOGFILE:
-        target_timestamp_source = TimestampSource.SUBSCRIBER
-        target_reading_source = ReadingSource.IMPORTED
-    else:
-        target_timestamp_source = TimestampSource.SUBSCRIBER
-        target_reading_source = ReadingSource.DIRECT
     query = select(Units.units_id).where(
-        Units.timestamp_source == target_timestamp_source,
-        Units.reading_source == target_reading_source,
+        Units.timestamp_source == tstamp_src,
+        Units.reading_source == source,
     )
     return session.scalars(query).one()
 
@@ -136,10 +126,10 @@ def resolve_references(
     reading: ReadingInfo,
     auth_filter: bool,
     latest: bool,
-    source: SourceType,
+    source: ReadingSource,
 ) -> Optional[ReferencesInfo]:
     pub.sendMessage(ReadingEvent.WRITE_REQUEST, source=source)
-    units_id = resolve_units_id(session, source)
+    units_id = resolve_units_id(session, source, reading.tstamp_src)
     try:
         phot = find_photometer_by_name(session, reading.name, reading.hash, reading.tstamp, latest)
         if phot is None:
@@ -177,7 +167,7 @@ def resolve_references_seq(
     readings: Sequence[ReadingInfo],
     auth_filter: bool,
     latest: bool,
-    source: SourceType,
+    source: ReadingSource,
 ) -> List[Optional[ReferencesInfo]]:
     return [
         resolve_references(session, reading, auth_filter, latest, source) for reading in readings
@@ -253,7 +243,7 @@ def _photometer_looped_write(
     session: Session,
     dbobjs: Iterable[PhotReadings],
     items: Sequence[Tuple[ReadingInfo, ReferencesInfo]],
-    source: SourceType,
+    source: ReadingSource,
 ):
     """One by one commit of database records"""
     for i, dbobj in enumerate(dbobjs):
@@ -279,7 +269,7 @@ def photometer_batch_write(
     readings: Iterable[ReadingInfo],
     auth_filter: bool = False,
     latest: bool = True,
-    source: SourceType = SourceType.MQTT,
+    source: ReadingSource = ReadingSource.DIRECT,
     dry_run: bool = False,
 ) -> None:
     session.begin()
@@ -313,7 +303,7 @@ def photometer_batch_write(
 def photometer_resolved_batch_write(
     session: Session,
     items: Sequence[Tuple[ReadingInfo, ReferencesInfo]],
-    source: SourceType = SourceType.MQTT,
+    source: ReadingSource = ReadingSource.DIRECT,
     dry_run: bool = False,
 ) -> None:
     session.begin()
