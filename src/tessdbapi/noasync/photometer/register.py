@@ -25,6 +25,7 @@ from sqlalchemy import func, select
 from tessdbdao import (
     ObserverType,
     PhotometerModel,
+    ReadingSource,
     ValidState,
 )
 
@@ -39,7 +40,6 @@ from ...model import (
     PhotometerInfo,
     RegisterOp,
     RegisterEvent,
-    SourceType,
     INFINITE_T,
 )
 
@@ -354,7 +354,7 @@ def update_managed_attributes(
     photometer: Tess,
     candidate: PhotometerInfo,
     tstamp: datetime,
-    source: SourceType,
+    source: ReadingSource,
 ) -> None:
     photometer.valid_until = tstamp
     photometer.valid_state = ValidState.EXPIRED
@@ -391,7 +391,7 @@ def update_managed_attributes(
 
 
 def maybe_update_managed_attributes(
-    session: Session, candidate: PhotometerInfo, tstamp: datetime, source: SourceType
+    session: Session, candidate: PhotometerInfo, tstamp: datetime, source: ReadingSource
 ) -> None:
     photometer = find_photometer_by_name(session, candidate.name)
     if changed_managed_attributes(photometer, candidate):
@@ -416,7 +416,7 @@ def photometer_register(
     observer_name: Optional[str] = None,
     observer_type: Optional[ObserverType] = None,
     tstamp: Optional[datetime] = None,
-    source: SourceType = SourceType.MQTT,
+    source: ReadingSource = ReadingSource.DIRECT,
     dry_run: bool = False,
 ) -> None:
     tstamp = tstamp or (datetime.now(timezone.utc) + timedelta(seconds=0.5)).replace(microsecond=0)

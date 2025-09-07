@@ -10,7 +10,7 @@
 
 import re
 from math import pi
-from enum import Enum, StrEnum, auto
+from enum import StrEnum
 from datetime import datetime, timezone
 from typing import Annotated, Optional, Union, Self
 
@@ -29,6 +29,7 @@ from tessdbdao import (
     PhotometerModel,
     RegisterState,
     ObserverType,
+    TimestampSource,
 )
 
 # ---------
@@ -45,12 +46,6 @@ STARS4ALL_NAME_PATTERN = re.compile(r"^stars\d{1,7}$")
 
 IMPOSSIBLE_TEMPERATURE = -273.15
 IMPOSSIBLE_SIGNAL_STRENGTH = 99
-
-
-class SourceType(Enum):
-    MQTT = auto()  # readings comming from MQTT real Time
-    GRAFANA = auto()  # readings from Bulk import from Grafana
-    LOGFILE = auto()  # readings recovered by log file
 
 class RegisterOp(StrEnum):
     CREATE = "CR"
@@ -250,6 +245,7 @@ class ObserverInfo(BaseModel):
 
 class ReadingInfo1c(BaseModel):
     tstamp: datetime
+    tstamp_src: TimestampSource = TimestampSource.SUBSCRIBER
     name: Stars4AllName
     sequence_number: int
     frequency: float  # Hz
@@ -267,6 +263,7 @@ class ReadingInfo1c(BaseModel):
 
 class ReadingInfo4c(BaseModel):
     tstamp: datetime
+    tstamp_src: TimestampSource = TimestampSource.SUBSCRIBER
     name: Stars4AllName
     sequence_number: int
     freq1: float  # Hz
