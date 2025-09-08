@@ -300,7 +300,7 @@ class ReadingInfo1c(BaseModel):
     signal_strength: Optional[int] = IMPOSSIBLE_SIGNAL_STRENGTH  # Tesstractor does not provide this
     hash: Optional[HashType] = None
 
-    def __le__(self, other: Self) -> bool:
+    def __lt__(self, other: Self) -> bool:
         return self.tstamp < other.tstamp
 
 
@@ -331,7 +331,7 @@ class ReadingInfo4c(BaseModel):
     signal_strength: Optional[int] = IMPOSSIBLE_SIGNAL_STRENGTH  # Tesstractor does not provide this
     hash: Optional[HashType] = None
 
-    def __le__(self, other: Self) -> bool:
+    def __lt__(self, other: Self) -> bool:
         return self.tstamp < other.tstamp
 
 
