@@ -27,6 +27,44 @@ def stars8000():
         tstamp=None,
     )
 
+def test_valid_zp_missing():
+    with pytest.raises(ValidationError) as excp:
+        PhotometerInfo(
+        name="stars1",
+        mac_address="AA:BB:CC:DD:EE:FF",
+        model=PhotometerModel.TESSW,
+        filter1="UV/IR-740",
+        offset1=0,
+        tstamp=None,
+    )
+    log.info(excp.value)
+
+def test_valid_zp_bad_string():
+    with pytest.raises(ValidationError) as excp:
+        PhotometerInfo(
+        name="stars1",
+        mac_address="AA:BB:CC:DD:EE:FF",
+        model=PhotometerModel.TESSW,
+        zp1="foo",
+        filter1="UV/IR-740",
+        offset1=0,
+        tstamp=None,
+    )
+    log.info(excp.value)
+
+def test_valid_zp_string():
+    msg = PhotometerInfo(
+        tstamp=None,
+        name="stars1",
+        mac_address="AA:BB:CC:DD:EE:FF",
+        model=PhotometerModel.TESSW,
+        zp1="20.50",
+        filter1="UV/IR-740",
+        offset1=0,
+    )
+    log.info("%s", msg.zp1)
+    assert msg.zp1 == 20.50
+
 def test_valid_tstamp_missing():
     with pytest.raises(ValidationError):
         PhotometerInfo(

@@ -124,12 +124,6 @@ def is_mac_address(value: str) -> str:
     return corrected_mac
 
 
-def is_valid_zp(value: float) -> float:
-    if not (ZP_LOW <= value <= ZP_HIGH):
-        raise ValueError(f"Zero Point {value} out of bounds [{ZP_LOW}-{ZP_HIGH}]")
-    return value
-
-
 def is_valid_offset(value: float) -> float:
     if not (OFFSET_LOW <= value <= OFFSET_HIGH):
         raise ValueError(f"Freq. Offset {value} out of bounds [{OFFSET_LOW}-{OFFSET_HIGH}]")
@@ -172,13 +166,22 @@ def is_hash(value: str) -> str:
         raise ValueError(f"hash {value} outside [A-Z1-9] range")
     return value
 
-
+def is_zero_point(value: Union[str, float]) -> float:
+    if isinstance(value, float):
+        if not (ZP_LOW <= value <= ZP_HIGH):
+            raise ValueError(f"Zero Point {value} out of bounds [{ZP_LOW}-{ZP_HIGH}]")
+        return value
+    elif isinstance(value, str):
+        value = float(value)
+        if not (ZP_LOW <= value <= ZP_HIGH):
+            raise ValueError(f"Zero Point {value} out of bounds [{ZP_LOW}-{ZP_HIGH}]")
+        return value
+    return ValueError(f"{value} has an unsupported type: {type(value)}")
 # --------------------
 # Pydantic annotations
 # --------------------
 
 MacAddress = Annotated[str, AfterValidator(is_mac_address)]
-ZeroPoint = Annotated[float, AfterValidator(is_valid_zp)]
 FreqOffset = Annotated[float, AfterValidator(is_valid_offset)]
 LongitudeType = Annotated[float, AfterValidator(is_longitude)]
 LatitudeType = Annotated[float, AfterValidator(is_latitude)]
@@ -187,6 +190,7 @@ AltitudeType = Annotated[float, AfterValidator(is_altitude)]
 Stars4AllName = Annotated[str, AfterValidator(is_stars4all_name)]
 HashType = Annotated[str, AfterValidator(is_hash)]
 TimestampType = Annotated[Union[str, datetime, None], BeforeValidator(is_datetime)]
+ZeroPointType = Annotated[Union[str, float], BeforeValidator(is_zero_point)]
 
 # ---------------
 # Pydantic models
@@ -202,16 +206,16 @@ class PhotometerInfo(BaseModel):
     firmware: Optional[str] = None
     registered: Optional[RegisterState] = RegisterState.AUTO
     authorised: bool = False
-    zp1: ZeroPoint
+    zp1: ZeroPointType
     filter1: str
     offset1: FreqOffset
-    zp2: Optional[ZeroPoint] = None
+    zp2: Optional[ZeroPointType] = None
     filter2: Optional[str] = None
     offset2: Optional[FreqOffset] = None
-    zp3: Optional[ZeroPoint] = None
+    zp3: Optional[ZeroPointType] = None
     filter3: Optional[str] = None
     offset3: Optional[FreqOffset] = None
-    zp4: Optional[ZeroPoint] = None
+    zp4: Optional[ZeroPointType] = None
     filter4: Optional[str] = None
     offset4: Optional[FreqOffset] = None
 
