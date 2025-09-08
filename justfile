@@ -49,6 +49,12 @@ upgrade library:
     uv pip install --upgrade {{library}}
     uv lock --upgrade
 
+pull:
+    git pull --rebase --tags
+
+push:
+    git push --tags
+
 # ==================
 # Development
 # ==================
