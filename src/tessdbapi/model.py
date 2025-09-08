@@ -9,9 +9,10 @@
 # -------------------
 
 import re
+import logging
 from math import pi
 from enum import StrEnum
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Annotated, Optional, Union, Self
 
 # ---------------------
@@ -19,7 +20,7 @@ from typing import Annotated, Optional, Union, Self
 # ---------------------
 
 
-from pydantic import BaseModel, AfterValidator, model_validator, EmailStr, HttpUrl
+from pydantic import BaseModel, BeforeValidator, AfterValidator, model_validator, EmailStr, HttpUrl
 
 # -------------------
 # Own package imports
@@ -46,6 +47,7 @@ STARS4ALL_NAME_PATTERN = re.compile(r"^stars\d{1,7}$")
 
 IMPOSSIBLE_TEMPERATURE = -273.15
 IMPOSSIBLE_SIGNAL_STRENGTH = 99
+
 
 class RegisterOp(StrEnum):
     CREATE = "CR"
@@ -74,9 +76,39 @@ INFINITE_T = datetime(
     year=2999, month=12, day=31, hour=23, minute=59, second=59, tzinfo=timezone.utc
 )
 
+# Sequence of possible timestamp formats comming from the Publishers
+TSTAMP_FORMAT = (
+    "%Y-%m-%dT%H:%M:%S",
+    "%Y-%m-%d %H:%M:%S",
+    "%Y-%m-%dT%H:%M:%SZ",
+    "%Y-%m-%d %H:%M:%SZ",
+    "%Y-%m-%dT%H:%M:%S:%z", # timezone aware that must be converted to UTC
+    "%Y-%m-%d %H:%M:%S:%z", # timezone aware that must be converted to UTC
+)
+
+log = logging.getLogger(__name__.split(".")[-1])
+
 # --------------------
 # Validation functions
 # --------------------
+
+
+def is_datetime(value: Union[str, datetime, None]) -> datetime:
+    if value is None:
+        return (datetime.now(timezone.utc) + timedelta(seconds=0.5)).replace(microsecond=0)
+    if isinstance(value, datetime):
+        return value
+    if not isinstance(value, str):
+        raise ValueError("tstamp must be a string or datetime.")
+    for i, fmt in enumerate(TSTAMP_FORMAT):
+        try:
+            if i < 4:
+                return datetime.strptime(value, fmt).replace(tzinfo=timezone.utc)
+            else:
+                return datetime.strptime(value, fmt).astimezone(timezone.utc)
+        except ValueError:
+            continue
+    raise ValueError(f"{value} tstamp must be in one of {TSTAMP_FORMAT} formats.")
 
 
 def is_mac_address(value: str) -> str:
@@ -157,6 +189,7 @@ AzimuthType = Annotated[float, AfterValidator(is_azimuth)]
 AltitudeType = Annotated[float, AfterValidator(is_altitude)]
 Stars4AllName = Annotated[str, AfterValidator(is_stars4all_name)]
 HashType = Annotated[str, AfterValidator(is_hash)]
+TimestampType = Annotated[Union[str, datetime, None], BeforeValidator(is_datetime)]
 
 # ---------------
 # Pydantic models
@@ -164,12 +197,14 @@ HashType = Annotated[str, AfterValidator(is_hash)]
 
 
 class PhotometerInfo(BaseModel):
-    name: str
+    tstamp: TimestampType = None
+    tstamp_src: TimestampSource = TimestampSource.SUBSCRIBER
+    name: Stars4AllName
     mac_address: MacAddress
     model: PhotometerModel
     firmware: Optional[str] = None
     registered: Optional[RegisterState] = RegisterState.AUTO
-    authorised: bool
+    authorised: bool = False
     zp1: ZeroPoint
     filter1: str
     offset1: FreqOffset
@@ -244,7 +279,7 @@ class ObserverInfo(BaseModel):
 
 
 class ReadingInfo1c(BaseModel):
-    tstamp: datetime
+    tstamp: TimestampType = None
     tstamp_src: TimestampSource = TimestampSource.SUBSCRIBER
     name: Stars4AllName
     sequence_number: int
@@ -262,7 +297,7 @@ class ReadingInfo1c(BaseModel):
 
 
 class ReadingInfo4c(BaseModel):
-    tstamp: datetime
+    tstamp: TimestampType = None
     tstamp_src: TimestampSource = TimestampSource.SUBSCRIBER
     name: Stars4AllName
     sequence_number: int
