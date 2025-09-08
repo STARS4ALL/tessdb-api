@@ -288,8 +288,8 @@ class ReadingInfo1c(BaseModel):
     tstamp_src: TimestampSource = TimestampSource.SUBSCRIBER
     name: Stars4AllName
     sequence_number: int
-    frequency: float  # Hz
-    magnitude: float  # mag/arcsec^2
+    freq1: float  # Hz
+    mag1: float  # mag/arcsec^2
     box_temperature: float  # degrees celsius
     sky_temperature: float  # degrees celsius
     azimuth: Optional[AzimuthType] = None  # decimal degrees

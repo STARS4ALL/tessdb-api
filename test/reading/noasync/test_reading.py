@@ -35,9 +35,13 @@ def fetch_readings(session: Session) -> List[TessReadings]:
     query = select(TessReadings).order_by(TessReadings.date_id.asc(), TessReadings.time_id.asc())
     return session.scalars(query).all()
 
+
 def fetch_readings4c(session: Session) -> List[Tess4cReadings]:
-    query = select(Tess4cReadings).order_by(Tess4cReadings.date_id.asc(), Tess4cReadings.time_id.asc())
+    query = select(Tess4cReadings).order_by(
+        Tess4cReadings.date_id.asc(), Tess4cReadings.time_id.asc()
+    )
     return session.scalars(query).all()
+
 
 # ------------------
 # Convenient fixtures
@@ -65,6 +69,7 @@ def test_reading_nonexists(database, stars8000r1):
         )
         assert ref is None
 
+
 def test_reading_wrong_hash(database, stars1r1_wrong_hash):
     with database.begin():
         ref = resolve_references(
@@ -76,6 +81,7 @@ def test_reading_wrong_hash(database, stars1r1_wrong_hash):
         )
         assert ref is None
 
+
 def test_reading_good_hash(database, stars1r1_good_hash):
     with database.begin():
         ref = resolve_references(
@@ -86,6 +92,7 @@ def test_reading_good_hash(database, stars1r1_good_hash):
             source=ReadingSource.IMPORTED,
         )
         assert ref is not None
+
 
 def test_reading_authorization(database, stars100r1, stars1r1):
     with database.begin():
@@ -146,11 +153,13 @@ def test_reading_write_dup(database, stars1_sparse, stars1_dense):
         readings = fetch_readings(database)
     assert len(readings) == 10
 
+
 def test_reading_write_dup2(database, stars1_sparse_dup):
     photometer_batch_write(database, stars1_sparse_dup)
     with database.begin():
         readings = fetch_readings(database)
     assert len(readings) == 3
+
 
 def test_reading_write_mixed(database, stars1_mixed):
     photometer_batch_write(database, stars1_mixed)
@@ -180,18 +189,26 @@ def test_reading4c_write_1(database, stars701):
     assert len(readings) == 1
     assert readings[0].sequence_number == 1
 
+
 def test_reading4c_write_1b(database, stars701):
-    photometer_batch_write(database, [stars701,])
+    photometer_batch_write(
+        database,
+        [
+            stars701,
+        ],
+    )
     with database.begin():
         readings = fetch_readings4c(database)
     assert len(readings) == 1
     assert readings[0].sequence_number == 1
+
 
 def test_reading4c_write_5(database, stars701_seq):
     photometer_batch_write(database, stars701_seq)
     with database.begin():
         readings = fetch_readings4c(database)
     assert len(readings) == 5
+
 
 def test_reading4c_write_mixed(database, stars_mixed):
     photometer_batch_write(database, stars_mixed)
@@ -201,14 +218,15 @@ def test_reading4c_write_mixed(database, stars_mixed):
     assert len(readings_1) == 10
     assert len(readings_2) == 5
 
+
 def test_valid_reading_1(database):
     with pytest.raises(ValidationError) as e:
         ReadingInfo1c(
             tstamp=datetime.now(timezone.utc).replace(microsecond=0),
             name=None,
             sequence_number=1,
-            frequency=0,
-            magnitude=0,
+            freq1=0,
+            mag1=0,
             box_temperature=0,
             sky_temperature=-10,
             signal_strength=-70,
@@ -222,8 +240,8 @@ def test_valid_reading_1(database):
             tstamp=datetime.now(timezone.utc).replace(microsecond=0),
             name="foo",
             sequence_number=1,
-            frequency=0,
-            magnitude=0,
+            freq1=0,
+            mag1=0,
             box_temperature=0,
             sky_temperature=-10,
             signal_strength=-70,
@@ -237,8 +255,8 @@ def test_valid_reading_1(database):
             tstamp=datetime.now(timezone.utc).replace(microsecond=0),
             name="stars1024",
             sequence_number=1,
-            frequency=0,
-            magnitude=0,
+            freq1=0,
+            mag1=0,
             box_temperature=0,
             sky_temperature=-10,
             signal_strength=-70,
@@ -253,8 +271,8 @@ def test_valid_reading_1(database):
             tstamp=datetime.now(timezone.utc).replace(microsecond=0),
             name="foo",
             sequence_number=1,
-            frequency=0,
-            magnitude=0,
+            freq1=0,
+            mag1=0,
             box_temperature=0,
             sky_temperature=-10,
             signal_strength=-70,
