@@ -121,7 +121,8 @@ env-restore bak_dir:
     cp {{ bak_dir }}/.env {{ local_env }}
     echo "Copy {{ bak_dir }}/tess.big.db => ."
     cp {{ bak_dir }}/tess.big.db .
+    echo "Copy {{ bak_dir }}/tess.medium.db => ."
+    cp {{ bak_dir }}/tess.medium.db .
     echo "Copy {{ bak_dir }}/tess.anew.db => ."
     cp {{ bak_dir }}/tess.anew.db .
-    echo "Copy {{ bak_dir }}/tess.db => ."
-    cp {{ bak_dir }}/tess.db .
+   

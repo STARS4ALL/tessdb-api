@@ -77,6 +77,7 @@ def test_register_timestamps_types(database, stars993):
     place = "Facultad de Físicas UCM"
     observer_type = ObserverType.PERSON
     observer_name = "Prof. Jaime Zamorano"
+    assert stars993.tstamp is not None
     with database.begin():
         photometer_register(
             session=database,
@@ -96,6 +97,7 @@ def test_register_tessw_single(database, stars8000):
     place = "Facultad de Físicas UCM"
     observer_type = ObserverType.PERSON
     observer_name = "Prof. Jaime Zamorano"
+    assert stars8000.tstamp is not None
     with database.begin():
         photometer_register(
             session=database,
@@ -124,6 +126,7 @@ def test_register_tess4c_single(database, stars8010):
     place = "Facultad de Físicas UCM"
     observer_type = ObserverType.PERSON
     observer_name = "Prof. Jaime Zamorano"
+    assert stars8010.tstamp is not None
     with database.begin():
         photometer_register(
             session=database,
@@ -158,6 +161,7 @@ def test_register_tess4c_single(database, stars8010):
 
 
 def test_register_tessw_nometa(database, stars8000):
+    assert stars8000.tstamp is not None
     with database.begin():
         photometer_register(
             session=database,
@@ -178,6 +182,7 @@ def test_register_tessw_duplicated(database, stars8001):
     place = "Facultad de Físicas UCM"
     observer_type = ObserverType.PERSON
     observer_name = "Prof. Jaime Zamorano"
+    assert stars8001.tstamp is not None
     with database.begin():
         for photinfo in [stars8001, stars8001]:
             photometer_register(
@@ -202,6 +207,7 @@ def test_register_tess4c_duplicated(database, stars8010):
     place = "Facultad de Físicas UCM"
     observer_type = ObserverType.PERSON
     observer_name = "Prof. Jaime Zamorano"
+    assert stars8010.tstamp is not None
     with database.begin():
         for photinfo in [stars8010, stars8010]:
             photometer_register(
@@ -226,6 +232,7 @@ def test_register_tessw_changezp(database, stars8000, stars8000zp):
     place = "Facultad de Físicas UCM"
     observer_type = ObserverType.PERSON
     observer_name = "Prof. Jaime Zamorano"
+    assert stars8000zp.tstamp is not None
     with database.begin():
         for photinfo in [stars8000, stars8000zp]:
             photometer_register(
@@ -257,6 +264,7 @@ def test_register_tess4c_changezp(database, stars8010, stars8010zp):
     place = "Facultad de Físicas UCM"
     observer_type = ObserverType.PERSON
     observer_name = "Prof. Jaime Zamorano"
+    assert stars8010.tstamp is not None
     with database.begin():
         for photinfo in [stars8010, stars8010zp]:
             photometer_register(
@@ -297,6 +305,8 @@ def test_register_rename(database, stars8000, stars8001):
     place = "Facultad de Físicas UCM"
     observer_type = ObserverType.PERSON
     observer_name = "Prof. Jaime Zamorano"
+    assert stars8000.tstamp is not None
+    assert stars8001.tstamp is not None
     with database.begin():
         for photinfo in [stars8000, stars8001]:
             photometer_register(
@@ -321,6 +331,8 @@ def test_register_repair(database, stars8000, stars8000rep):
     place = "Facultad de Físicas UCM"
     observer_type = ObserverType.PERSON
     observer_name = "Prof. Jaime Zamorano"
+    assert stars8000.tstamp is not None
+    assert stars8000rep.tstamp is not None
     with database.begin():
         for photinfo in [stars8000, stars8000rep]:
             photometer_register(
@@ -345,6 +357,9 @@ def test_register_extinct(database, stars8000, stars8002, stars8002ex):
     place = "Facultad de Físicas UCM"
     observer_type = ObserverType.PERSON
     observer_name = "Prof. Jaime Zamorano"
+    assert stars8000.tstamp is not None
+    assert stars8002.tstamp is not None
+    assert stars8002ex.tstamp is not None
     with database.begin():
         for photinfo in [stars8000, stars8002]:
             photometer_register(

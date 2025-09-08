@@ -9,7 +9,6 @@
 # -------------------
 
 import logging
-from datetime import datetime, timedelta, timezone
 from typing import Optional
 from functools import lru_cache
 
@@ -140,18 +139,17 @@ def override_associations(
     old_mac_entry: NameMapping,
     old_name_entry: NameMapping,
     candidate: PhotometerInfo,
-    tstamp: datetime,
 ) -> None:
-    old_mac_entry.valid_until = tstamp
+    old_mac_entry.valid_until = candidate.tstamp
     old_mac_entry.valid_state = ValidState.EXPIRED
     session.add(old_mac_entry)
-    old_name_entry.valid_until = tstamp
+    old_name_entry.valid_until = candidate.tstamp
     old_name_entry.valid_state = ValidState.EXPIRED
     session.add(old_name_entry)
     mapping = NameMapping(
         mac_address=candidate.mac_address,
         name=candidate.name,
-        valid_since=tstamp,
+        valid_since=candidate.tstamp,
         valid_until=INFINITE_T,
         valid_state=ValidState.CURRENT,
     )
@@ -164,13 +162,12 @@ def add_brand_new_tess(
     observer_type: Optional[ObserverType],
     observer_name: Optional[str],
     place: Optional[str],
-    tstamp: datetime,
 ) -> None:
     observer_id = observer_id_lookup(session, observer_type, observer_name)
     location_id = location_id_lookup(session, place)
     photometer = Tess(
         mac_address=candidate.mac_address,
-        valid_since=tstamp,
+        valid_since=candidate.tstamp,
         valid_until=INFINITE_T,
         valid_state=ValidState.CURRENT,
         model=candidate.model,
@@ -198,7 +195,7 @@ def add_brand_new_tess(
     mapping = NameMapping(
         mac_address=candidate.mac_address,
         name=candidate.name,
-        valid_since=tstamp,
+        valid_since=candidate.tstamp,
         valid_until=INFINITE_T,
         valid_state=ValidState.CURRENT,
     )
@@ -206,19 +203,14 @@ def add_brand_new_tess(
 
 
 def renaming_photometer(
-    session: Session, old_mapping: NameMapping, candidate: PhotometerInfo, tstamp: datetime
+    session: Session, old_mapping: NameMapping, candidate: PhotometerInfo
 ) -> None:
-    '''
-    EXPIRE_EXISTING_MAC_SQL = """
-    UPDATE name_to_mac_t SET valid_until = :eff_date, valid_state = :valid_expired
-    WHERE  mac_address = :mac AND valid_state == :valid_current
-    '''
-    old_mapping.valid_until = tstamp
+    old_mapping.valid_until = candidate.tstamp
     old_mapping.valid_state = ValidState.EXPIRED
     mapping = NameMapping(
         mac_address=candidate.mac_address,
         name=candidate.name,
-        valid_since=tstamp,
+        valid_since=candidate.tstamp,
         valid_until=INFINITE_T,
         valid_state=ValidState.CURRENT,
     )
@@ -227,15 +219,15 @@ def renaming_photometer(
 
 
 def replacing_photometer(
-    session: Session, old_mapping: NameMapping, candidate: PhotometerInfo, tstamp: datetime
+    session: Session, old_mapping: NameMapping, candidate: PhotometerInfo
 ) -> None:
-    old_mapping.valid_until = tstamp
+    old_mapping.valid_until = candidate.tstamp
     old_mapping.valid_state = ValidState.EXPIRED
     session.add(old_mapping)
     mapping = NameMapping(
         mac_address=candidate.mac_address,
         name=candidate.name,
-        valid_since=tstamp,
+        valid_since=candidate.tstamp,
         valid_until=INFINITE_T,
         valid_state=ValidState.CURRENT,
     )
@@ -247,7 +239,7 @@ def replacing_photometer(
     location_id, observer_id = session.execute(query).one()
     photometer = Tess(
         mac_address=candidate.mac_address,
-        valid_since=tstamp,
+        valid_since=candidate.tstamp,
         valid_until=INFINITE_T,
         valid_state=ValidState.CURRENT,
         model=candidate.model,
@@ -353,15 +345,14 @@ def update_managed_attributes(
     session: Session,
     photometer: Tess,
     candidate: PhotometerInfo,
-    tstamp: datetime,
     source: ReadingSource,
 ) -> None:
-    photometer.valid_until = tstamp
+    photometer.valid_until = candidate.tstamp
     photometer.valid_state = ValidState.EXPIRED
     session.add(photometer)
     new_photometer = Tess(
         mac_address=candidate.mac_address,
-        valid_since=tstamp,
+        valid_since=candidate.tstamp,
         valid_until=INFINITE_T,
         valid_state=ValidState.CURRENT,
         model=candidate.model,
@@ -391,11 +382,11 @@ def update_managed_attributes(
 
 
 def maybe_update_managed_attributes(
-    session: Session, candidate: PhotometerInfo, tstamp: datetime, source: ReadingSource
+    session: Session, candidate: PhotometerInfo, source: ReadingSource
 ) -> None:
     photometer = find_photometer_by_name(session, candidate.name)
     if changed_managed_attributes(photometer, candidate):
-        update_managed_attributes(session, photometer, candidate, tstamp, source)
+        update_managed_attributes(session, photometer, candidate, source)
     else:
         # self.nReboot += 1
         pub.sendMessage(RegisterEvent.PHOT_RESET, source=source)
@@ -415,18 +406,16 @@ def photometer_register(
     place: Optional[str] = None,
     observer_name: Optional[str] = None,
     observer_type: Optional[ObserverType] = None,
-    tstamp: Optional[datetime] = None,
     source: ReadingSource = ReadingSource.DIRECT,
     dry_run: bool = False,
 ) -> None:
-    tstamp = tstamp or (datetime.now(timezone.utc) + timedelta(seconds=0.5)).replace(microsecond=0)
     old_mac_entry = lookup_mac(session, candidate.mac_address)
     old_name_entry = lookup_name(session, candidate.name)
 
     if not old_mac_entry and not old_name_entry:
         # Brand new TESS-W case:
         # No existitng (MAC, name) pairs in the name_to_mac_t table
-        add_brand_new_tess(session, candidate, observer_type, observer_name, place, tstamp)
+        add_brand_new_tess(session, candidate, observer_type, observer_name, place)
         # STATS CODE
         # self.nCreation += 1
         pub.sendMessage(RegisterOp.CREATE, source=source)
@@ -441,7 +430,7 @@ def photometer_register(
         # but the name in the candidate does not.
         # STATS CODE
         # self.nRename += 1
-        renaming_photometer(session, old_mac_entry, candidate, tstamp)
+        renaming_photometer(session, old_mac_entry, candidate)
         pub.sendMessage(RegisterOp.RENAME, source=source)
         log.info(
             "Renamed photometer %s (MAC = %s) with brand new name %s",
@@ -456,7 +445,7 @@ def photometer_register(
         # This means that we are probably replacing a broken photometer with a new one, keeping the same name.
         # STATS CODE
         # self.nReplace += 1
-        replacing_photometer(session, old_name_entry, candidate, tstamp)
+        replacing_photometer(session, old_name_entry, candidate)
         pub.sendMessage(RegisterOp.REPLACE, source=source)
         log.info(
             "Replaced photometer tagged %s (old MAC = %s) with new one with MAC %s",
@@ -473,7 +462,7 @@ def photometer_register(
             candidate.name == old_mac_entry.name
             and candidate.mac_address == old_name_entry.mac_address
         ):
-            maybe_update_managed_attributes(session, candidate, tstamp, source)
+            maybe_update_managed_attributes(session, candidate, source)
         else:
             log.info(
                 "Overridden associations (%s -> %s) and (%s -> %s) with new (%s -> %s) association data",
@@ -485,7 +474,7 @@ def photometer_register(
                 candidate.mac_address,
             )
             log.warning("Label %s has no associated photometer now!", old_mac_entry.name)
-            override_associations(session, old_mac_entry, old_name_entry, candidate, tstamp)
+            override_associations(session, old_mac_entry, old_name_entry, candidate)
             pub.sendMessage(RegisterOp.EXTINCT, source=source)
 
     if dry_run:

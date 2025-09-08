@@ -1,17 +1,7 @@
-import pytest
 import logging
-from argparse import Namespace
-from typing import Optional, Sequence
 from datetime import datetime, timezone
 
-from sqlalchemy import func, select
-from pydantic import ValidationError
-
-from lica.sqlalchemy import sqa_logging
-
 from tessdbdao import PhotometerModel
-
-
 from tessdbapi.model import PhotometerInfo
 
 
