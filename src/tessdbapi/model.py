@@ -219,6 +219,10 @@ class PhotometerInfo(BaseModel):
     filter4: Optional[str] = None
     offset4: Optional[FreqOffset] = None
 
+    def __le__(self, other: Self) -> bool:
+        return self.tstamp < other.tstamp
+
+
     @model_validator(mode="after")
     def validate_zero_points(self) -> Self:
         if self.model == PhotometerModel.TESSW or self.model == PhotometerModel.TESSWDL:
@@ -296,6 +300,9 @@ class ReadingInfo1c(BaseModel):
     signal_strength: Optional[int] = IMPOSSIBLE_SIGNAL_STRENGTH  # Tesstractor does not provide this
     hash: Optional[HashType] = None
 
+    def __le__(self, other: Self) -> bool:
+        return self.tstamp < other.tstamp
+
 
 class ReadingInfo4c(BaseModel):
     tstamp: TimestampType
@@ -323,6 +330,9 @@ class ReadingInfo4c(BaseModel):
     elevation: Optional[float] = None  # meters above sea level
     signal_strength: Optional[int] = IMPOSSIBLE_SIGNAL_STRENGTH  # Tesstractor does not provide this
     hash: Optional[HashType] = None
+
+    def __le__(self, other: Self) -> bool:
+        return self.tstamp < other.tstamp
 
 
 # For type hints
