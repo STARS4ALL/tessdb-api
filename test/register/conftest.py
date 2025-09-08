@@ -17,6 +17,7 @@ def stars8000():
         zp1=20.50,
         filter1="UV/IR-740",
         offset1=0.0,
+        tstamp=None,
     )
 
 
@@ -32,6 +33,7 @@ def stars8000zp():
         zp1=20.33,
         filter1="UV/IR-740",
         offset1=0.001,
+        tstamp=None,
     )
 
 
@@ -47,6 +49,7 @@ def stars8001():
         zp1=20.50,
         filter1="UV/IR-740",
         offset1=0.0,
+        tstamp=None,
     )
 
 
@@ -62,6 +65,7 @@ def stars8000rep():
         zp1=20.48,
         filter1="UV/IR-740",
         offset1=0.0,
+        tstamp=None,
     )
 
 
@@ -77,6 +81,7 @@ def stars8002():
         zp1=20.50,
         filter1="UV/IR-740",
         offset1=0.0,
+        tstamp=None,
     )
 
 
@@ -92,6 +97,7 @@ def stars8002ex():
         zp1=20.50,
         filter1="UV/IR-740",
         offset1=0.0,
+        tstamp=None,
     )
 
 
@@ -116,6 +122,7 @@ def stars8010():
         zp4=20.50,
         filter4="UV/IR-740",
         offset4=0.0,
+        tstamp=None,
     )
 
 
@@ -140,6 +147,7 @@ def stars8010zp():
         zp4=20.51,
         filter4="UV/IR-750",
         offset4=0.0,
+        tstamp=None,
     )
 
 
@@ -155,5 +163,6 @@ def stars993():
         zp1=20.99,
         filter1="UV/IR-740",
         offset1=0.0,
+        tstamp=None,
     )
 

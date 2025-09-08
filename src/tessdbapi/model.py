@@ -9,7 +9,6 @@
 # -------------------
 
 import re
-import logging
 from math import pi
 from enum import StrEnum
 from datetime import datetime, timezone, timedelta
@@ -85,8 +84,6 @@ TSTAMP_FORMAT = (
     "%Y-%m-%dT%H:%M:%S:%z", # timezone aware that must be converted to UTC
     "%Y-%m-%d %H:%M:%S:%z", # timezone aware that must be converted to UTC
 )
-
-log = logging.getLogger(__name__.split(".")[-1])
 
 # --------------------
 # Validation functions
@@ -197,7 +194,7 @@ TimestampType = Annotated[Union[str, datetime, None], BeforeValidator(is_datetim
 
 
 class PhotometerInfo(BaseModel):
-    tstamp: TimestampType = None
+    tstamp: TimestampType
     tstamp_src: TimestampSource = TimestampSource.SUBSCRIBER
     name: Stars4AllName
     mac_address: MacAddress
@@ -279,7 +276,7 @@ class ObserverInfo(BaseModel):
 
 
 class ReadingInfo1c(BaseModel):
-    tstamp: TimestampType = None
+    tstamp: TimestampType
     tstamp_src: TimestampSource = TimestampSource.SUBSCRIBER
     name: Stars4AllName
     sequence_number: int
@@ -297,7 +294,7 @@ class ReadingInfo1c(BaseModel):
 
 
 class ReadingInfo4c(BaseModel):
-    tstamp: TimestampType = None
+    tstamp: TimestampType
     tstamp_src: TimestampSource = TimestampSource.SUBSCRIBER
     name: Stars4AllName
     sequence_number: int

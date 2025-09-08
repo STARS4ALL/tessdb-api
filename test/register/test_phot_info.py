@@ -1,15 +1,35 @@
+import pytest
 import logging
 from datetime import datetime, timezone
 
-from tessdbdao import PhotometerModel
+from pydantic import ValidationError
+
+from tessdbdao import PhotometerModel, RegisterState
 from tessdbapi.model import PhotometerInfo
 
 
 log = logging.getLogger(__name__.split(".")[-1])
 
 
+ 
+@pytest.fixture()
+def stars8000():
+    return PhotometerInfo(
+        name="stars8000",
+        mac_address="AA:BB:CC:DD:EE:FF",
+        model=PhotometerModel.TESSW,
+        firmware="0.1.0",
+        authorised=True,
+        registered=RegisterState.MANUAL,
+        zp1=20.50,
+        filter1="UV/IR-740",
+        offset1=0.0,
+        tstamp=None,
+    )
+
 def test_valid_tstamp_missing():
-    msg = PhotometerInfo(
+    with pytest.raises(ValidationError):
+        PhotometerInfo(
         name="stars1",
         mac_address="AA:BB:CC:DD:EE:FF",
         model=PhotometerModel.TESSW,
@@ -17,10 +37,9 @@ def test_valid_tstamp_missing():
         filter1="UV/IR-740",
         offset1=0,
     )
-    log.info("%s", msg.tstamp)
 
 
-def test_valid_tstamp_none():
+def test_valid_tstamp_none_1():
     msg = PhotometerInfo(
         tstamp=None,
         name="stars1",
@@ -31,6 +50,11 @@ def test_valid_tstamp_none():
         offset1=0,
     )
     log.info("%s", msg.tstamp)
+    assert msg.tstamp is not None
+
+def test_valid_tstamp_none_2(stars8000):
+    assert stars8000.tstamp is not None
+
 
 
 def test_valid_tstamp_datetime_obj():
@@ -43,6 +67,7 @@ def test_valid_tstamp_datetime_obj():
         filter1="UV/IR-740",
         offset1=0,
     )
+    assert msg.tstamp is not None
     log.info("%s", msg.tstamp)
 
 
@@ -56,6 +81,7 @@ def test_valid_tstamp_datetime_str():
         filter1="UV/IR-740",
         offset1=0,
     )
+    assert msg.tstamp is not None
     log.info("%s", msg.tstamp)
 
 
@@ -70,6 +96,7 @@ def test_valid_tstamp_datetime_str_tzone():
         filter1="UV/IR-740",
         offset1=0,
     )
+    assert msg.tstamp is not None
     expected = datetime.strptime(value, "%Y-%m-%d %H:%M:%S:%z").astimezone(timezone.utc)
     log.info("Before: %s", value)
     log.info("After: %s, tzinfo is %s", expected, expected.tzinfo)
@@ -87,6 +114,7 @@ def test_valid_tstamp_datetime_str_z():
         filter1="UV/IR-740",
         offset1=0,
     )
+    assert msg.tstamp is not None
     expected = datetime.strptime(value, "%Y-%m-%d %H:%M:%SZ").replace(tzinfo=timezone.utc)
     log.info("Before: %s", value)
     log.info("After: %s, tzinfo is %s", expected, expected.tzinfo)
