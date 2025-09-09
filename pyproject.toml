@@ -31,7 +31,7 @@ dependencies = [
    # For location, wee need all these
     "geopy>=2.4",
     "timezonefinder>=8.0",
-    "pytz=>2025.02",
+    "pytz",
     # registering process notifications
     "pypubsub>=4.0",
 ]
