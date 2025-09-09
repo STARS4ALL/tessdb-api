@@ -115,7 +115,10 @@ async def find_photometer_by_name(
                 Tess.valid_state == ValidState.CURRENT,
             )
         )
-    result = (await session.scalars(query)).one_or_none()
+    #result = (await session.scalars(query)).one_or_none()
+    result = (await session.scalars(query)).all()
+    log.info("TOMA TODOS %s",result)
+    result = result[0]
     if result and mac_hash and mac_hash != "".join(result.mac_address.split(":"))[-3:]:
         raise HashMismatchError(mac_hash, result.mac_address)
     return result

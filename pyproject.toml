@@ -26,13 +26,12 @@ dependencies = [
    "lica[aiosqlalchemy]>=2.0", # needs lica library from 2.x on
    "tessdb-dao>=0.3",
    # generic validation
-   "pydantic",
-   "email-validator",
+   "pydantic>=2.11",
+   "email-validator>=2.3",
    # For location, wee need all these
-    "geopy",
-    "timezonefinder",
-    "requests",
-    "pytz",
+    "geopy>=2.4",
+    "timezonefinder>=8.0",
+    "pytz=>2025.02",
     # registering process notifications
     "pypubsub>=4.0",
 ]
