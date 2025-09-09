@@ -119,12 +119,13 @@ async def find_photometer_by_name(
     result = (await session.scalars(query)).all()
     log.info("TOMA TODOS %s",result)
     for row in result:
-        log.info("%s", row)
+        log.info("%s %s %s", Tess.name, Tess.mac_address, Tess.tess_id)
     if result and mac_hash and mac_hash != "".join(result[0].mac_address.split(":"))[-3:]:
         raise HashMismatchError(mac_hash, result[0].mac_address)
     #if result and mac_hash and mac_hash != "".join(result.mac_address.split(":"))[-3:]:
     #    raise HashMismatchError(mac_hash, result.mac_address)
-    return result
+    #return result
+    return None if not result else result[0]
 
 
 async def resolve_references(
