@@ -1,5 +1,5 @@
 import pytest
-
+from datetime import datetime, timezone
 from tessdbdao import PhotometerModel, RegisterState
 from tessdbapi.model import PhotometerInfo
 
@@ -17,7 +17,7 @@ def stars8000():
         zp1=20.50,
         filter1="UV/IR-740",
         offset1=0.0,
-        tstamp=None,
+        tstamp=datetime(2025,9, 10, 12, 00, 00, tzinfo=timezone.utc).replace(microsecond=0),
     )
 
 
@@ -65,8 +65,24 @@ def stars8000rep():
         zp1=20.48,
         filter1="UV/IR-740",
         offset1=0.0,
-        tstamp=None,
+        tstamp=datetime(2025,9, 10, 12, 5, 00, tzinfo=timezone.utc).replace(microsecond=0),
     )
+
+@pytest.fixture()
+def stars8000rep2():
+    return PhotometerInfo(
+        name="stars8000",
+        mac_address="AA:BB:CC:DD:EE:FF",
+        model=PhotometerModel.TESSW,
+        firmware="0.1.0",
+        authorised=True,
+        registered=RegisterState.MANUAL,
+        zp1=20.48,
+        filter1="UV/IR-740",
+        offset1=0.0,
+        tstamp=datetime(2025,9, 10, 12, 10, 00, tzinfo=timezone.utc).replace(microsecond=0),
+    )
+
 
 
 @pytest.fixture()
