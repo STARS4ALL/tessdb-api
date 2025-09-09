@@ -119,7 +119,7 @@ async def find_photometer_by_name(
     result = (await session.scalars(query)).all()
     log.info("TOMA TODOS %s",result)
     for row in result:
-        log.info("%s %s %s", name, Tess.mac_address, Tess.tess_id)
+        log.info("%s %s %s", name, row.mac_address, row.tess_id)
     if result and mac_hash and mac_hash != "".join(result[0].mac_address.split(":"))[-3:]:
         raise HashMismatchError(mac_hash, result[0].mac_address)
     #if result and mac_hash and mac_hash != "".join(result.mac_address.split(":"))[-3:]:
