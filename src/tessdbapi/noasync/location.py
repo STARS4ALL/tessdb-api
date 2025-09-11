@@ -80,6 +80,17 @@ def geolocate(longitude: float, latitude: float) -> Dict[str, Any]:
     log.debug(row)
     return row
 
+def geolocate_raw(longitude: float, latitude: float) -> Dict[str, Any]:
+    row = dict()
+    row["longitude"] = longitude
+    row["latitude"] = latitude
+    log.info(f"Geolocating Latitude {row['latitude']}, Longitude {row['longitude']}")
+    geocode = RateLimiter(geolocator.geocode, min_delay_seconds=2)  # noqa: F841
+    location = geolocator.reverse(f"{row['latitude']}, {row['longitude']}", language="en")
+    row.update(location.raw["address"])
+    row["timezone"] = tf.timezone_at(lng=row["longitude"], lat=row["latitude"])
+    return row
+
 
 def location_lookup(session: Session, candidate: LocationInfo) -> Optional[Location]:
     query = select(Location).where(
