@@ -40,6 +40,7 @@ log = logging.getLogger(__name__.split(".")[-1])
 geolocator = Nominatim(user_agent="STARS4ALL project")
 tf = TimezoneFinder()
 
+
 def geolocate(longitude: float, latitude: float) -> Dict[str, Any]:
     row = dict()
     row["longitude"] = longitude
@@ -77,6 +78,18 @@ def geolocate(longitude: float, latitude: float) -> Dict[str, Any]:
     row["country"] = address.get("country", None)
     row["timezone"] = tf.timezone_at(lng=row["longitude"], lat=row["latitude"])
     log.debug(row)
+    return row
+
+
+def geolocate_raw(longitude: float, latitude: float) -> Dict[str, Any]:
+    row = dict()
+    row["longitude"] = longitude
+    row["latitude"] = latitude
+    log.info(f"Geolocating Latitude {row['latitude']}, Longitude {row['longitude']}")
+    geocode = RateLimiter(geolocator.geocode, min_delay_seconds=2)  # noqa: F841
+    location = geolocator.reverse(f"{row['latitude']}, {row['longitude']}", language="en")
+    row.update(location.raw["address"])
+    row["timezone"] = tf.timezone_at(lng=row["longitude"], lat=row["latitude"])
     return row
 
 
