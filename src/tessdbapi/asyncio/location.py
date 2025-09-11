@@ -11,15 +11,12 @@
 import asyncio
 import logging
 
-from typing import Optional, Dict, Any
+from typing import Optional
 
 # -------------------
 # Third party imports
 # -------------------
 
-from timezonefinder import TimezoneFinder
-from geopy.geocoders import Nominatim
-from geopy.extra.rate_limiter import RateLimiter
 
 from sqlalchemy import select
 
@@ -31,67 +28,18 @@ from tessdbdao.asyncio import Location
 
 from ..util import Session
 from ..model import LocationInfo, GEO_COORD_EPSILON as EPSILON
+from ..location_common import geolocate
 
 # ----------------
 # Global variables
 # ----------------
 
+
 log = logging.getLogger(__name__.split(".")[-1])
-geolocator = Nominatim(user_agent="STARS4ALL project")
-tf = TimezoneFinder()
 
-
-def geolocate(longitude: float, latitude: float) -> Dict[str, Any]:
-    row = dict()
-    row["longitude"] = longitude
-    row["latitude"] = latitude
-    log.info(f"Geolocating Latitude {row['latitude']}, Longitude {row['longitude']}")
-    geocode = RateLimiter(geolocator.geocode, min_delay_seconds=2)  # noqa: F841
-    location = geolocator.reverse(f"{row['latitude']}, {row['longitude']}", language="en")
-    address = location.raw["address"]
-    log.debug("RAW NOMINATIM METADATA IS\n%s", address)
-    for location_type in ("village", "town", "city", "municipality"):
-        try:
-            row["town"] = address[location_type]
-        except KeyError:
-            row["town"] = None
-            continue
-        else:
-            break
-    for sub_region in ("province", "state", "state_district"):
-        try:
-            row["sub_region"] = address[sub_region]
-        except KeyError:
-            row["sub_region"] = None
-            continue
-        else:
-            break
-    for region in ("state", "state_district"):
-        try:
-            row["region"] = address[region]
-        except KeyError:
-            row["region"] = None
-            continue
-        else:
-            break
-    row["zipcode"] = address.get("postcode", None)
-    row["country"] = address.get("country", None)
-    row["timezone"] = tf.timezone_at(lng=row["longitude"], lat=row["latitude"])
-    log.debug(row)
-    return row
-
-
-def geolocate_raw(longitude: float, latitude: float) -> Dict[str, Any]:
-    row = dict()
-    row["longitude"] = longitude
-    row["latitude"] = latitude
-    log.info(f"Geolocating Latitude {row['latitude']}, Longitude {row['longitude']}")
-    geocode = RateLimiter(geolocator.geocode, min_delay_seconds=2)  # noqa: F841
-    location = geolocator.reverse(f"{row['latitude']}, {row['longitude']}", language="en")
-    row.update(location.raw["address"])
-    row["timezone"] = tf.timezone_at(lng=row["longitude"], lat=row["latitude"])
-    return row
-
+# -------------
+# API functions
+# -------------
 
 async def location_lookup(session: Session, candidate: LocationInfo) -> Optional[Location]:
     query = select(Location).where(
