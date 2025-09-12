@@ -653,7 +653,7 @@ dev = [
 
 [[package]]
 name = "tessdb-dao"
-version = "0.4.3"
+version = "0.4.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiosqlite" },
@@ -661,9 +661,9 @@ dependencies = [
     { name = "lica", extra = ["aiosqlalchemy"] },
     { name = "sqlalchemy", extra = ["asyncio"] },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5d/84/db28e3a195ca84f5d4ee92902d136a0458e15ff303e99b1214eef180a138/tessdb_dao-0.4.3.tar.gz", hash = "sha256:02050c5fe7c0f0316fb581c3407914c84450fdd2f65d928a28768b1dbd5155c7", size = 27427, upload-time = "2025-09-12T18:26:11.975Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/2f/02/190b808d55b17a142da89540f798af5b77590223888782e6efca030ce72e/tessdb_dao-0.4.4.tar.gz", hash = "sha256:e26211e2ff89f1dc5e27c101c8f8d1025cab69355da11a9220d2acc1a44bc650", size = 27456, upload-time = "2025-09-12T18:33:35.751Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/63/38/3ff3a314930a78512f85c7d7d67c11360db8d7a81163e761cdecd75b0415/tessdb_dao-0.4.3-py3-none-any.whl", hash = "sha256:63fe96e09928dfdd52458ee652353fc4d6d300cc37baa89a62c9810130fea50a", size = 16313, upload-time = "2025-09-12T18:26:10.598Z" },
+    { url = "https://files.pythonhosted.org/packages/cf/c7/940a71d11e64eb3f1f9294d3b01ce791e9945e9f68dd4cc73e19a7a41dd6/tessdb_dao-0.4.4-py3-none-any.whl", hash = "sha256:90267312963730edac08ed7ce14864014751e1ffa3cfbccc837f872efd905bce", size = 16331, upload-time = "2025-09-12T18:33:34.398Z" },
 ]
 
 [[package]]
