@@ -265,16 +265,16 @@ wheels = [
 
 [[package]]
 name = "lica"
-version = "2.0.3"
+version = "2.0.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "python-decouple" },
     { name = "strenum" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/14/66/962994af76913fd8461752cec300878ff529b68fa52b018ccb1ffcd9333f/lica-2.0.3.tar.gz", hash = "sha256:db96d6c834059011b1531826e5fbfcf99f9f2f1c01d0d5ed245311dc285c1c08", size = 145985, upload-time = "2025-08-30T06:10:52.542Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9e/5a/98b46a98946ab6866143f7f603204fe1eebbef7bef7676da44f3ec569d25/lica-2.0.4.tar.gz", hash = "sha256:b4f1c9b908bf5bf39988832d20aa24766e9008307a8c9ec36f3f2394e9bd264d", size = 145964, upload-time = "2025-09-12T19:04:44.831Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/78/3b/71a7cc0194f851b6485af9028b5ed426d6e656b6739eb6e6619a83749306/lica-2.0.3-py3-none-any.whl", hash = "sha256:565ffeac4ec0eca25abb772023fcaa2c491b61823d9cbb65ad3cf671ab14c1ea", size = 82796, upload-time = "2025-08-30T06:10:51.369Z" },
+    { url = "https://files.pythonhosted.org/packages/9f/14/1385d5e71b4468e8d2a5bd2f6525649ac6c4565b1cdf5e5125804bb0f148/lica-2.0.4-py3-none-any.whl", hash = "sha256:20e3a0a4f39828c817213f5a41031ed27b760cc75dd0d055188e409460857e27", size = 82792, upload-time = "2025-09-12T19:04:43.194Z" },
 ]
 
 [package.optional-dependencies]
