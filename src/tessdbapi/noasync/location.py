@@ -99,7 +99,7 @@ def location_update(
     session: Session,
     candidate: LocationInfo,
     dry_run: bool = False,
-) -> None:
+) -> Optional[Location]:
     location = location_lookup(session, candidate)
     if not location:
         log.info(
@@ -119,3 +119,5 @@ def location_update(
     if dry_run:
         log.warning("Dry run mode. Database not written")
         session.rollback()
+        return None
+    return location

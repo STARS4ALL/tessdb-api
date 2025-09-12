@@ -40,7 +40,6 @@ async def test_location_create_1(database, melorse):
 async def test_location_create_1b(database, melorse):
     async with database.begin():
         location = await location_create(session=database, candidate=melorse)
-
     async with database.begin():
         await database.refresh(location)
         log.info(location.location_id)
@@ -67,7 +66,8 @@ async def test_location_update_1(database, melorse):
     async with database.begin():
         await location_update(session=database, candidate=melorse)
         location = await location_lookup(session=database, candidate=melorse)
-        location = await location_lookup(session=database, candidate=melorse)
+    async with database.begin():
+        await database.refresh(location)
         assert location.longitude == melorse.longitude
         assert location.latitude == melorse.latitude
         assert location.elevation == melorse.height

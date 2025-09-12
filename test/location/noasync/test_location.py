@@ -36,13 +36,14 @@ def test_location_create_1(database, melorse):
 def test_location_create_1b(database, melorse):
     with database.begin():
         location = location_create(session=database, candidate=melorse)
-    database.refresh(location)
-    log.info(location.location_id)
-    assert location.longitude == melorse.longitude
-    assert location.latitude == melorse.latitude
-    assert location.elevation == melorse.height
-    assert location.country == "Spain"
-    assert location.timezone == "Europe/Paris"
+    with database.begin():
+        database.refresh(location)
+        log.info(location.location_id)
+        assert location.longitude == melorse.longitude
+        assert location.latitude == melorse.latitude
+        assert location.elevation == melorse.height
+        assert location.country == "Spain"
+        assert location.timezone == "Europe/Paris"
 
 
 def test_location_create_2(database, melorse):
@@ -58,9 +59,9 @@ def test_location_update_1(database, melorse):
     melorse.height = 880
     melorse.timezone = "Europe/Madrid"
     with database.begin():
-        location_update(session=database, candidate=melorse)
-        location = location_lookup(session=database, candidate=melorse)
-        location = location_lookup(session=database, candidate=melorse)
+        location = location_update(session=database, candidate=melorse)
+    with database.begin():
+        database.refresh(location)
         assert location.longitude == melorse.longitude
         assert location.latitude == melorse.latitude
         assert location.elevation == melorse.height
