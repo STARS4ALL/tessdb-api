@@ -84,7 +84,7 @@ async def location_create(
     location = await location_lookup(session, candidate)
     if location:
         log.warning("Location already exists")
-        return
+        return None
     geolocated = await asyncio.to_thread(geolocate, candidate.longitude, candidate.latitude)
     location = Location(
         longitude=candidate.longitude,

@@ -11,7 +11,7 @@
 import logging
 from datetime import datetime, timezone
 
-from typing import Sequence
+from typing import Sequence, Optional
 
 # -------------------
 # Third party imports
@@ -62,7 +62,7 @@ def observer_create(
     session: Session,
     candidate: ObserverInfo,
     dry_run: bool = False,
-) -> None:
+) -> Optional[Observer]:
     observer = observer_lookup_history(session, candidate)
     if observer:
         log.warning("Observer already exists")
@@ -83,6 +83,8 @@ def observer_create(
     if dry_run:
         log.warning("Dry run mode. Database not written")
         session.rollback()
+        return None
+    return observer
 
 
 def observer_update(
@@ -90,7 +92,7 @@ def observer_update(
     candidate: ObserverInfo,
     fix_current: bool,
     dry_run: bool = False,
-) -> None:
+) -> Optional[Observer]:
     observer = observer_lookup_current(session, candidate)
     if not observer:
         log.info(
@@ -98,7 +100,7 @@ def observer_update(
             candidate.type,
             candidate.name,
         )
-        return
+        return None
     website_url = str(candidate.website_url) if candidate.website_url else None
     if fix_current:
         observer.affiliation = candidate.affiliation or observer.affiliation
@@ -126,3 +128,5 @@ def observer_update(
     if dry_run:
         log.warning("Dry run mode. Database not written")
         session.rollback()
+        return None
+    return observer

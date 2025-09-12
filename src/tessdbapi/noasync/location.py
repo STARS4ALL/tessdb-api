@@ -107,7 +107,7 @@ def location_update(
             candidate.longitude,
             candidate.latitude,
         )
-        return
+        return None
     location.elevation = candidate.height or location.elevation
     location.place = candidate.place or location.place
     location.town = candidate.town or location.town

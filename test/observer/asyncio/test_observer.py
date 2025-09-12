@@ -48,6 +48,21 @@ async def test_observer_1(database, ucm):
         observer = await observer_lookup_history(session=database, candidate=ucm)
         assert len(observer) == 1
 
+@pytest.mark.asyncio
+async def test_observer_1b(database, ucm):
+    async with database.begin():
+        observer = await observer_create(session=database, candidate=ucm)
+    async with database.begin():
+        await database.refresh(observer)
+        assert observer.type == ucm.type
+        assert observer.name == ucm.name
+        assert observer.valid_state == ValidState.CURRENT
+
+    async with database.begin():
+        await observer_create(session=database, candidate=ucm)
+        observer = await observer_lookup_history(session=database, candidate=ucm)
+        assert len(observer) == 1
+
 
 @pytest.mark.asyncio
 async def test_observer_2(database, ucm):

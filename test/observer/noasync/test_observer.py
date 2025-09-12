@@ -45,6 +45,20 @@ def test_observer_1(database, ucm):
         observer = observer_lookup_history(session=database, candidate=ucm)
         assert len(observer) == 1
 
+def test_observer_1b(database, ucm):
+    with database.begin():
+        observer = observer_create(session=database, candidate=ucm)
+    with database.begin():
+        database.refresh(observer)
+        assert observer.type == ucm.type
+        assert observer.name == ucm.name
+        assert observer.valid_state == ValidState.CURRENT
+    with database.begin():
+        observer_create(session=database, candidate=ucm)
+        observer = observer_lookup_history(session=database, candidate=ucm)
+        assert len(observer) == 1
+
+
 
 def test_observer_2(database, ucm):
     with database.begin():
