@@ -70,7 +70,7 @@ def location_create(
     session: Session,
     candidate: LocationInfo,
     dry_run: bool = False,
-) -> None:
+) -> Optional[Location]:
     location = location_lookup(session, candidate)
     if location:
         log.warning("Location already exists")
@@ -91,6 +91,8 @@ def location_create(
     if dry_run:
         log.warning("Dry run mode. Database not written")
         session.rollback()
+        return None
+    return location
 
 
 def location_update(

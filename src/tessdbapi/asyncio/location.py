@@ -80,7 +80,7 @@ async def location_create(
     session: Session,
     candidate: LocationInfo,
     dry_run: bool = False,
-) -> None:
+) -> Optional[Location]:
     location = await location_lookup(session, candidate)
     if location:
         log.warning("Location already exists")
@@ -100,7 +100,9 @@ async def location_create(
     session.add(location)
     if dry_run:
         log.warning("Dry run mode. Database not written")
-        await session.rollback()
+        session.rollback()
+        return None
+    return location
 
 
 async def location_update(

@@ -15,7 +15,7 @@ log = logging.getLogger(__name__.split(".")[-1])
 
 @pytest.fixture(scope="function", params=[DbSize.MEDIUM])
 def database(request):
-    args = Namespace(verbose=False)
+    args = Namespace(verbose=True)
     sqa_logging(args)
     copy_file(f"tess.{request.param}.db", "tess.db")
     yield Session()
@@ -32,6 +32,17 @@ def test_location_create_1(database, melorse):
         assert location.elevation == melorse.height
         assert location.country == "Spain"
         assert location.timezone == "Europe/Paris"
+
+def test_location_create_1b(database, melorse):
+    with database.begin():
+        location = location_create(session=database, candidate=melorse)
+    database.refresh(location)
+    log.info(location.location_id)
+    assert location.longitude == melorse.longitude
+    assert location.latitude == melorse.latitude
+    assert location.elevation == melorse.height
+    assert location.country == "Spain"
+    assert location.timezone == "Europe/Paris"
 
 
 def test_location_create_2(database, melorse):
