@@ -44,16 +44,8 @@ def location_distances_from(candidate: LocationInfo, locations: Sequence[Locatio
 
 
 def location_list(session: Session) -> Sequence[Location]:
-    query = select(Location)
+    query = select(Location).where(Location.longitude != None, Location.longitude != None)  # noqa: E711
     return session.scalars(query).all()
-
-
-def location_lookup(session: Session, candidate: LocationInfo) -> Optional[Location]:
-    query = select(Location).where(
-        Location.longitude.between(candidate.longitude - EPSILON, candidate.longitude + EPSILON),
-        Location.latitude.between(candidate.latitude - EPSILON, candidate.latitude + EPSILON),
-    )
-    return session.scalars(query).one_or_none()
 
 
 def location_nearby(session: Session, candidate: LocationInfo, limit: float) -> Sequence[Location]:
@@ -61,9 +53,18 @@ def location_nearby(session: Session, candidate: LocationInfo, limit: float) -> 
     distances = location_distances_from(candidate, locations)
     nearby = [0 < d <= limit for d in distances]
     zipped_loc = list(filter(lambda x: x[1], zip(locations, nearby)))
-    locations, _ = zip(*zipped_loc)
+    if zipped_loc:
+        locations, _ = zip(*zipped_loc)
+    else:
+        locations = list()
     return locations
 
+def location_lookup(session: Session, candidate: LocationInfo) -> Optional[Location]:
+    query = select(Location).where(
+        Location.longitude.between(candidate.longitude - EPSILON, candidate.longitude + EPSILON),
+        Location.latitude.between(candidate.latitude - EPSILON, candidate.latitude + EPSILON),
+    )
+    return session.scalars(query).one_or_none()
 
 def location_create(
     session: Session,
