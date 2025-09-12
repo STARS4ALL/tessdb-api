@@ -36,6 +36,11 @@ from ..model import ObserverInfo, INFINITE_T
 log = logging.getLogger(__name__.split(".")[-1])
 
 
+def observers_list(session: Session) -> Sequence[Observer]:
+    query = select(Observer).order_by(Observer.type, Observer.name, Observer.valid_since)
+    return session.scalars(query).all()
+
+
 def observer_lookup_current(session: Session, candidate: ObserverInfo) -> Observer:
     query = select(Observer).where(
         Observer.type == candidate.type,
@@ -44,12 +49,14 @@ def observer_lookup_current(session: Session, candidate: ObserverInfo) -> Observ
     )
     return session.scalars(query).one_or_none()
 
+
 def observer_lookup_history(session: Session, candidate: ObserverInfo) -> Sequence[Observer]:
     query = select(Observer).where(
         Observer.type == candidate.type,
         func.lower(Observer.name) == candidate.name.lower(),
     )
     return session.scalars(query).all()
+
 
 def observer_create(
     session: Session,
@@ -66,7 +73,7 @@ def observer_create(
         name=candidate.name,
         affiliation=candidate.affiliation,
         acronym=candidate.acronym,
-        website_url= website_url,
+        website_url=website_url,
         email=candidate.email,
         valid_since=datetime.now(timezone.utc).replace(microsecond=0),
         valid_until=INFINITE_T,
@@ -119,4 +126,3 @@ def observer_update(
     if dry_run:
         log.warning("Dry run mode. Database not written")
         session.rollback()
-

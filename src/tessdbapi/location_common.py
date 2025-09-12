@@ -44,7 +44,6 @@ def geolocate(longitude: float, latitude: float) -> Dict[str, Any]:
     geocode = RateLimiter(geolocator.geocode, min_delay_seconds=2)  # noqa: F841
     location = geolocator.reverse(f"{row['latitude']}, {row['longitude']}", language="en")
     address = location.raw["address"]
-    log.debug("RAW NOMINATIM METADATA IS\n%s", address)
     for location_type in ("village", "town", "city", "municipality"):
         try:
             row["town"] = address[location_type]

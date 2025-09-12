@@ -10,7 +10,7 @@
 
 import logging
 
-from typing import Optional
+from typing import Optional, Sequence, List, Tuple
 
 # -------------------
 # Third party imports
@@ -27,13 +27,22 @@ from tessdbdao.noasync import Location
 
 from ..util import Session
 from ..model import LocationInfo, GEO_COORD_EPSILON as EPSILON
-from ..location_common import geolocate
+from ..location_common import geolocate, distance
 
 # ----------------
 # Global variables
 # ----------------
 
 log = logging.getLogger(__name__.split(".")[-1])
+
+
+def location_distances_from(pos: Tuple[float, float], locations: Sequence[Location]) -> List[float]:
+    return [distance(pos, (location.longitude, location.latitude)) for location in locations]
+
+
+def location_list(session: Session) -> Sequence[Location]:
+    query = select(Location)
+    return session.scalars(query).all()
 
 
 def location_lookup(session: Session, candidate: LocationInfo) -> Optional[Location]:
