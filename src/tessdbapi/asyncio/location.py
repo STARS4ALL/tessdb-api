@@ -41,12 +41,28 @@ log = logging.getLogger(__name__.split(".")[-1])
 # API functions
 # -------------
 
-def location_distances_from(pos: Tuple[float, float], locations: Sequence[Location]) -> List[float]:
-    return [distance(pos, (location.longitude, location.latitude)) for location in locations]
+
+def location_distances_from(candidate: LocationInfo, locations: Sequence[Location]) -> List[float]:
+    return [
+        distance((candidate.longitude, candidate.latitude), (location.longitude, location.latitude))
+        for location in locations
+    ]
+
 
 async def location_list(session: Session) -> Sequence[Location]:
     query = select(Location)
     return (await session.scalars(query)).all()
+
+
+async def location_nearby(
+    session: Session, candidate: LocationInfo, limit: float
+) -> Sequence[Location]:
+    locations = await location_list(session)
+    distances = location_distances_from(candidate, locations)
+    nearby = [0 < d <= limit for d in distances]
+    zipped_loc = list(filter(lambda x: x[1], zip(locations, nearby)))
+    locations, _ = zip(*zipped_loc)
+    return locations
 
 
 async def location_lookup(session: Session, candidate: LocationInfo) -> Optional[Location]:
