@@ -118,9 +118,13 @@ async def find_photometer_by_name(
         )
 
     result = (await session.scalars(query)).all()
-    for i, ph in enumerate(result, start=1):
-        log.info("FOUND %d/%d in find_photometer_by_name(%s) => %s", i, len(result), name, ph)
-    result = result[0] if result else None
+    N = len(result)
+    if N > 1:
+        for i, ph in enumerate(result, start=1):
+            log.info("FOUND %d/%d in find_photometer_by_name(%s) => %s", i, N, name, ph)
+        result = result[0] if result else None
+    elif N == 0:
+        result = None
 
     if result and mac_hash and mac_hash != "".join(result.mac_address.split(":"))[-3:]:
         raise HashMismatchError(mac_hash, result.mac_address)
