@@ -118,7 +118,7 @@ async def find_photometer_by_name(
         )
 
     result = (await session.scalars(query)).all()
-    return result[0] if result else None  # Choose the most recent
+    result = result[0] if result else None  # Choose the most recent one
     if result and mac_hash and mac_hash != "".join(result.mac_address.split(":"))[-3:]:
         raise HashMismatchError(mac_hash, result.mac_address)
     return result
