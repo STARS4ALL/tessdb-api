@@ -98,7 +98,7 @@ def find_photometer_by_name(
             .where(
                 NameMapping.name == name,
                 NameMapping.valid_state == ValidState.CURRENT,
-                Tess.valid_state == ValidState.CURRENT,
+                and_(Tess.valid_since <= tstamp, tstamp <= Tess.valid_until),
             )
         )
     else:
@@ -112,7 +112,6 @@ def find_photometer_by_name(
                 NameMapping.name == name,
                 and_(NameMapping.valid_since <= tstamp, tstamp <= NameMapping.valid_until),
                 and_(Tess.valid_since <= tstamp, tstamp <= Tess.valid_until),
-                Tess.valid_state == ValidState.CURRENT,
             )
         )
     result = session.scalars(query).one_or_none()

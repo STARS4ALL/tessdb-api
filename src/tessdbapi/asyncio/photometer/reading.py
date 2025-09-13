@@ -98,8 +98,8 @@ async def find_photometer_by_name(
             .where(
                 NameMapping.name == name,
                 NameMapping.valid_state == ValidState.CURRENT,
-                Tess.valid_state == ValidState.CURRENT,
-            ).order_by(NameMapping.valid_since.asc(), Tess.valid_since.asc()) # THIS SHOUD NOT BE NECESSARY FOR A SINGLE ROW
+                and_(Tess.valid_since <= tstamp, tstamp <= Tess.valid_until),
+            )
         )
     else:
         query = (
@@ -112,20 +112,12 @@ async def find_photometer_by_name(
                 NameMapping.name == name,
                 and_(NameMapping.valid_since <= tstamp, tstamp <= NameMapping.valid_until),
                 and_(Tess.valid_since <= tstamp, tstamp <= Tess.valid_until),
-                Tess.valid_state == ValidState.CURRENT,
             )
         )
-    #result = (await session.scalars(query)).one_or_none()
-    result = (await session.scalars(query)).all()
-    log.info("TOMA TODOS %s",result)
-    for row in result:
-        log.info("%s %s %s", name, row.mac_address, row.tess_id)
-    if result and mac_hash and mac_hash != "".join(result[0].mac_address.split(":"))[-3:]:
-        raise HashMismatchError(mac_hash, result[0].mac_address)
-    #if result and mac_hash and mac_hash != "".join(result.mac_address.split(":"))[-3:]:
-    #    raise HashMismatchError(mac_hash, result.mac_address)
-    #return result
-    return None if not result else result[0]
+    result = (await session.scalars(query)).one_or_none()
+    if result and mac_hash and mac_hash != "".join(result.mac_address.split(":"))[-3:]:
+        raise HashMismatchError(mac_hash, result.mac_address)
+    return result
 
 
 async def resolve_references(

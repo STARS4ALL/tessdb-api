@@ -116,8 +116,10 @@ def find_photometer_by_name(session: Session, name: str) -> Optional[Tess]:
             NameMapping.valid_state == ValidState.CURRENT,
             Tess.valid_state == ValidState.CURRENT,
         )
+        .order_by(Tess.valid_since.desc())
     )
-    return session.scalars(query).one_or_none()
+    result = session.scalars(query).all()  # Thre may be servearl Tess. with CURRENT state
+    return result[0] if result else None
 
 
 def lookup_mac(session: Session, mac_address: str) -> Optional[NameMapping]:
