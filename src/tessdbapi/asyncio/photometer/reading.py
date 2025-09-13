@@ -330,3 +330,28 @@ async def photometer_resolved_batch_write(
         else:
             pub.sendMessage(ReadingEvent.SQL_OK, source=source, count=len(objs))
             await session.close()
+
+async def photometer_resolved_batch_write(
+    session: Session,
+    items: Sequence[Tuple[ReadingInfo, ReferencesInfo]],
+    source: ReadingSource = ReadingSource.DIRECT,
+    dry_run: bool = False,
+) -> None:
+    async with session.begin():
+        objs = tuple(new_dbobject(reading, reference) for reading, reference in items)
+        session.add_all(objs)
+        if dry_run:
+            log.warning("Dry run mode. Database not written")
+            await session.rollback()
+        else:
+            try:
+                await session.commit()
+            except Exception as e:
+                log.error(str(e).split("\n")[0])
+                log.info("Looping %d readings one by one.", len(objs))
+                await session.rollback()
+                await session.close()
+                await _photometer_looped_write(session, objs, items, source)
+            else:
+                pub.sendMessage(ReadingEvent.SQL_OK, source=source, count=len(objs))
+                await session.close()
