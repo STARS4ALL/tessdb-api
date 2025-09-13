@@ -100,6 +100,7 @@ async def find_photometer_by_name(
                 NameMapping.valid_state == ValidState.CURRENT,
                 and_(Tess.valid_since <= tstamp, tstamp <= Tess.valid_until),
             )
+            .order_by(Tess.valid_since.desc())
         )
     else:
         query = (
@@ -113,11 +114,12 @@ async def find_photometer_by_name(
                 and_(NameMapping.valid_since <= tstamp, tstamp <= NameMapping.valid_until),
                 and_(Tess.valid_since <= tstamp, tstamp <= Tess.valid_until),
             )
+            .order_by(Tess.valid_since.desc())
         )
-    
+
     result = (await session.scalars(query)).all()
     for i, ph in enumerate(result, start=1):
-        log.info("FOUND %d/%d in find_photometer_by_name() => %s", i, len(result), ph)
+        log.info("FOUND %d/%d in find_photometer_by_name(%s) => %s", i, len(result), name, ph)
     result = result[0] if result else None
 
     if result and mac_hash and mac_hash != "".join(result.mac_address.split(":"))[-3:]:
