@@ -1,10 +1,7 @@
 import pytest
 import pytest_asyncio
 import logging
-import shlex
-import subprocess
 from argparse import Namespace
-from enum import StrEnum
 from typing import Optional, Sequence
 from datetime import datetime
 
@@ -12,7 +9,7 @@ from sqlalchemy import func, select
 
 from lica.sqlalchemy import sqa_logging
 
-from tessdbdao import ObserverType, PhotometerModel, ValidState, RegisterState
+from tessdbdao import ObserverType, ValidState, RegisterState
 from tessdbdao.asyncio import Tess
 
 from tessdbapi.model import PhotometerInfo
@@ -35,6 +32,8 @@ log = logging.getLogger(__name__.split(".")[-1])
 # -------------------------------
 
 
+
+
 async def photometer_lookup_current(session: Session, candidate: PhotometerInfo) -> Optional[Tess]:
     query = select(Tess).where(
         func.lower(Tess.mac_address) == candidate.mac_address.lower(),
@@ -55,6 +54,18 @@ async def photometer_lookup_history(
     )
     return (await session.scalars(query)).all()
 
+async def photometer_lookup_history_current(
+    session: Session, candidate: PhotometerInfo
+) -> Sequence[Tess]:
+    query = (
+        select(Tess)
+        .where(
+            func.lower(Tess.mac_address) == candidate.mac_address.lower(),
+            Tess.valid_state == ValidState.CURRENT,
+        )
+        .order_by(Tess.valid_since.asc())
+    )
+    return (await session.scalars(query)).all()
 
 # ------------------
 # Convenient fixtures
@@ -383,3 +394,31 @@ async def test_register_extinct(database, stars8000, stars8002, stars8002ex):
         photometer = await photometer_lookup_current(session=database, candidate=stars8002)
         assert photometer.mac_address == stars8002.mac_address
         assert photometer.valid_state == ValidState.CURRENT
+
+# ------------------------------------
+# Replace an photometer back and forth
+# ------------------------------------
+
+@pytest.mark.asyncio
+async def test_register_tessw_complex(database, stars8000, stars8000rep, stars8000rep2):
+    assert stars8000.tstamp is not None
+    async with database.begin():
+        await photometer_register(
+            session=database,
+            candidate=stars8000,
+        )
+        log.info("registered the first one")
+        await photometer_register(
+            session=database,
+            candidate=stars8000rep,
+        )
+        log.info("replaced photometer")
+        await photometer_register(
+            session=database,
+            candidate=stars8000rep2,
+        )
+        log.info("replaced photometer back")
+        photometers = await photometer_lookup_history(database, candidate=stars8000)
+        assert len(photometers) == 2
+        photometers = await photometer_lookup_history_current(database, candidate=stars8000)
+        assert len(photometers) == 1
