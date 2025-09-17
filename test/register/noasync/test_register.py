@@ -51,6 +51,18 @@ def photometer_lookup_history(
     )
     return session.scalars(query).all()
 
+def photometer_lookup_history_current(
+    session: Session, candidate: PhotometerInfo
+) -> Sequence[Tess]:
+    query = (
+        select(Tess)
+        .where(
+            func.lower(Tess.mac_address) == candidate.mac_address.lower(),
+            Tess.valid_state == ValidState.CURRENT,
+        )
+        .order_by(Tess.valid_since.asc())
+    )
+    return session.scalars(query).all()
 
 # ------------------
 # Convenient fixtures
@@ -382,3 +394,29 @@ def test_register_extinct(database, stars8000, stars8002, stars8002ex):
         photometer = photometer_lookup_current(session=database, candidate=stars8002)
         assert photometer.mac_address == stars8002.mac_address
         assert photometer.valid_state == ValidState.CURRENT
+
+
+
+def test_register_tessw_complex(database, stars8000, stars8000rep, stars8000rep2):
+    assert stars8000.tstamp is not None
+    with database.begin():
+        photometer_register(
+            session=database,
+            candidate=stars8000,
+        )
+        log.info("registered the first one")
+        photometer_register(
+            session=database,
+            candidate=stars8000rep,
+        )
+        log.info("replaced photometer")
+        photometer_register(
+            session=database,
+            candidate=stars8000rep2,
+        )
+        log.info("replaced photometer back")
+        photometers = photometer_lookup_history(database, candidate=stars8000)
+        assert len(photometers) == 2
+        photometers = photometer_lookup_history_current(database, candidate=stars8000)
+        assert len(photometers) == 1
+
