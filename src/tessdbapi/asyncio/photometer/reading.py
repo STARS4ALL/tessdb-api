@@ -40,6 +40,8 @@ from ...model import (
     ReadingInfo4c,
     ReadingInfo,
     ReadingEvent,
+    IMPOSSIBLE_SIGNAL_STRENGTH,
+    IMPOSSIBLE_TEMPERATURE,
 )
 
 # ----------------
@@ -98,8 +100,9 @@ async def find_photometer_by_name(
             .where(
                 NameMapping.name == name,
                 NameMapping.valid_state == ValidState.CURRENT,
-                Tess.valid_state == ValidState.CURRENT,
+                and_(Tess.valid_since <= tstamp, tstamp <= Tess.valid_until),
             )
+            .order_by(Tess.valid_since.desc())
         )
     else:
         query = (
@@ -112,10 +115,12 @@ async def find_photometer_by_name(
                 NameMapping.name == name,
                 and_(NameMapping.valid_since <= tstamp, tstamp <= NameMapping.valid_until),
                 and_(Tess.valid_since <= tstamp, tstamp <= Tess.valid_until),
-                Tess.valid_state == ValidState.CURRENT,
             )
+            .order_by(Tess.valid_since.desc())
         )
-    result = (await session.scalars(query)).one_or_none()
+
+    result = (await session.scalars(query)).all()
+    result = result[0] if result else None  # Choose the most recent one
     if result and mac_hash and mac_hash != "".join(result.mac_address.split(":"))[-3:]:
         raise HashMismatchError(mac_hash, result.mac_address)
     return result
@@ -223,14 +228,22 @@ def tess4c_new(
         mag3=reading.mag3,
         freq4=reading.freq4,
         mag4=reading.mag4,
-        box_temperature=reading.box_temperature,
-        sky_temperature=reading.sky_temperature,
+        # Early TESS4C modes doid not provide this
+        box_temperature=reading.box_temperature
+        if reading.box_temperature is not None
+        else IMPOSSIBLE_TEMPERATURE,
+        sky_temperature=reading.sky_temperature
+        if reading.sky_temperature is not None
+        else IMPOSSIBLE_TEMPERATURE,
         azimuth=reading.azimuth,
         altitude=reading.altitude,
         longitude=reading.longitude,
         latitude=reading.latitude,
         elevation=reading.elevation,
-        signal_strength=reading.signal_strength,
+        # Early TESS4C modes doid not provide this
+        signal_strength=reading.signal_strength
+        if reading.signal_strength is not None
+        else IMPOSSIBLE_SIGNAL_STRENGTH,
         hash=reading.hash,
     )
 
