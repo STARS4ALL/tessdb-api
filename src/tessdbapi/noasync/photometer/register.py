@@ -221,7 +221,7 @@ def renaming_photometer(
 
 
 def replacing_photometer(
-    session: Session, old_mapping: NameMapping, candidate: PhotometerInfo
+    session: Session, old_mapping: NameMapping, candidate: PhotometerInfo, source: ReadingSource
 ) -> None:
     old_mapping.valid_until = candidate.tstamp
     old_mapping.valid_state = ValidState.EXPIRED
@@ -234,38 +234,52 @@ def replacing_photometer(
         valid_state=ValidState.CURRENT,
     )
     session.add(mapping)
-    # Copy the observer and location from the broken photometer
-    query = select(Tess.location_id, Tess.observer_id).where(
-        Tess.mac_address == old_mapping.mac_address, Tess.valid_state == ValidState.CURRENT
+    query = (
+        select(Tess)
+        .where(Tess.mac_address == candidate.mac_address, Tess.valid_state == ValidState.CURRENT)
+        .order_by(Tess.valid_since.desc())
     )
-    location_id, observer_id = session.execute(query).one()
-    photometer = Tess(
-        mac_address=candidate.mac_address,
-        valid_since=candidate.tstamp,
-        valid_until=INFINITE_T,
-        valid_state=ValidState.CURRENT,
-        model=candidate.model,
-        firmware=candidate.firmware,
-        authorised=candidate.authorised,
-        registered=candidate.registered,
-        # From 1 to 4
-        nchannels=4 if candidate.model == PhotometerModel.TESS4C else 1,
-        zp1=candidate.zp1,
-        filter1=candidate.filter1,
-        offset1=candidate.offset1,
-        zp2=candidate.zp2,
-        filter2=candidate.filter2,
-        offset2=candidate.offset2,
-        zp3=candidate.zp3,
-        filter3=candidate.filter3,
-        offset3=candidate.offset3,
-        zp4=candidate.zp4,
-        filter4=candidate.filter4,
-        offset4=candidate.offset4,
-        location_id=location_id,
-        observer_id=observer_id,
-    )
-    session.add(photometer)
+    another_tess = session.scalars(query).all()
+    if another_tess:
+        another_tess = another_tess[0]
+        log.warning("Replacing back %s", dict(candidate))
+        updated = maybe_update_managed_attributes(session, candidate, another_tess)
+        if updated:
+            # self.nZPChange += 1
+            pub.sendMessage(RegisterEvent.ZP_CHANGE, source=source)
+    else:
+        # Copy the observer and location from the broken photometer
+        query = select(Tess.location_id, Tess.observer_id).where(
+            Tess.mac_address == old_mapping.mac_address, Tess.valid_state == ValidState.CURRENT
+        )
+        location_id, observer_id = session.execute(query).one()
+        photometer = Tess(
+            mac_address=candidate.mac_address,
+            valid_since=candidate.tstamp,
+            valid_until=INFINITE_T,
+            valid_state=ValidState.CURRENT,
+            model=candidate.model,
+            firmware=candidate.firmware,
+            authorised=candidate.authorised,
+            registered=candidate.registered,
+            # From 1 to 4
+            nchannels=4 if candidate.model == PhotometerModel.TESS4C else 1,
+            zp1=candidate.zp1,
+            filter1=candidate.filter1,
+            offset1=candidate.offset1,
+            zp2=candidate.zp2,
+            filter2=candidate.filter2,
+            offset2=candidate.offset2,
+            zp3=candidate.zp3,
+            filter3=candidate.filter3,
+            offset3=candidate.offset3,
+            zp4=candidate.zp4,
+            filter4=candidate.filter4,
+            offset4=candidate.offset4,
+            location_id=location_id,
+            observer_id=observer_id,
+        )
+        session.add(photometer)
 
 
 def is_tess4c_changed(photometer: Tess, candidate: PhotometerInfo) -> bool:
@@ -347,7 +361,6 @@ def update_managed_attributes(
     session: Session,
     photometer: Tess,
     candidate: PhotometerInfo,
-    source: ReadingSource,
 ) -> None:
     photometer.valid_until = candidate.tstamp
     photometer.valid_state = ValidState.EXPIRED
@@ -379,22 +392,15 @@ def update_managed_attributes(
         offset4=candidate.offset4,
     )
     session.add(new_photometer)
-    # self.nZPChange += 1
-    pub.sendMessage(RegisterEvent.ZP_CHANGE, source=source)
 
 
 def maybe_update_managed_attributes(
-    session: Session, candidate: PhotometerInfo, source: ReadingSource
-) -> None:
-    photometer = find_photometer_by_name(session, candidate.name)
+    session: Session, candidate: PhotometerInfo, photometer: Tess
+) -> bool:
     if changed_managed_attributes(photometer, candidate):
-        update_managed_attributes(session, photometer, candidate, source)
-    else:
-        # self.nReboot += 1
-        pub.sendMessage(RegisterEvent.PHOT_RESET, source=source)
-        log.info(
-            "Detected reboot for photometer %s (MAC = %s)", candidate.name, candidate.mac_address
-        )
+        update_managed_attributes(session, photometer, candidate)
+        return True
+    return False
 
 
 # ===================
@@ -447,7 +453,7 @@ def photometer_register(
         # This means that we are probably replacing a broken photometer with a new one, keeping the same name.
         # STATS CODE
         # self.nReplace += 1
-        replacing_photometer(session, old_name_entry, candidate)
+        replacing_photometer(session, old_name_entry, candidate, source)
         pub.sendMessage(RegisterOp.REPLACE, source=source)
         log.info(
             "Replaced photometer tagged %s (old MAC = %s) with new one with MAC %s",
@@ -464,7 +470,19 @@ def photometer_register(
             candidate.name == old_mac_entry.name
             and candidate.mac_address == old_name_entry.mac_address
         ):
-            maybe_update_managed_attributes(session, candidate, source)
+            photometer = find_photometer_by_name(session, candidate.name)
+            updated = maybe_update_managed_attributes(session, candidate, photometer)
+            if updated:
+                # self.nZPChange += 1
+                pub.sendMessage(RegisterEvent.ZP_CHANGE, source=source)
+            else:
+                # self.nReboot += 1
+                pub.sendMessage(RegisterEvent.PHOT_RESET, source=source)
+                log.info(
+                    "Detected reboot for photometer %s (MAC = %s)",
+                    candidate.name,
+                    candidate.mac_address,
+                )
         else:
             log.info(
                 "Overridden associations (%s -> %s) and (%s -> %s) with new (%s -> %s) association data",

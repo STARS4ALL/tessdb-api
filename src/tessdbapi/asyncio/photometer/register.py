@@ -252,8 +252,11 @@ async def replacing_photometer(
     if another_tess:
         another_tess = another_tess[0]
         log.warning("Replacing back %s", dict(candidate))
-        log.info(another_tess)
-        _maybe_update_managed_attributes(session, candidate, another_tess, source)
+        updated = maybe_update_managed_attributes(session, candidate, another_tess)
+        if updated:
+            # self.nZPChange += 1
+            pub.sendMessage(RegisterEvent.ZP_CHANGE, source=source)
+
     else:
         # Copy the observer and location from the broken photometer
         query = select(Tess.location_id, Tess.observer_id).where(
@@ -368,7 +371,6 @@ def update_managed_attributes(
     session: Session,
     photometer: Tess,
     candidate: PhotometerInfo,
-    source: ReadingSource,
 ) -> None:
     photometer.valid_until = candidate.tstamp
     photometer.valid_state = ValidState.EXPIRED
@@ -400,28 +402,15 @@ def update_managed_attributes(
         offset4=candidate.offset4,
     )
     session.add(new_photometer)
-    # self.nZPChange += 1
-    pub.sendMessage(RegisterEvent.ZP_CHANGE, source=source)
 
 
-def _maybe_update_managed_attributes(
-    session: Session, candidate: PhotometerInfo, photometer: Tess, source: ReadingSource
-) -> None:
+def maybe_update_managed_attributes(
+    session: Session, candidate: PhotometerInfo, photometer: Tess
+) -> bool:
     if changed_managed_attributes(photometer, candidate):
-        update_managed_attributes(session, photometer, candidate, source)
-    else:
-        # self.nReboot += 1
-        pub.sendMessage(RegisterEvent.PHOT_RESET, source=source)
-        log.info(
-            "Detected reboot for photometer %s (MAC = %s)", candidate.name, candidate.mac_address
-        )
-
-
-async def maybe_update_managed_attributes(
-    session: Session, candidate: PhotometerInfo, source: ReadingSource
-) -> None:
-    photometer = await find_photometer_by_name(session, candidate.name)
-    _maybe_update_managed_attributes(session, candidate, photometer, source)
+        update_managed_attributes(session, photometer, candidate)
+        return True
+    return False
 
 
 # ===================
@@ -491,7 +480,19 @@ async def photometer_register(
             candidate.name == old_mac_entry.name
             and candidate.mac_address == old_name_entry.mac_address
         ):
-            await maybe_update_managed_attributes(session, candidate, source)
+            photometer = await find_photometer_by_name(session, candidate.name)
+            updated = maybe_update_managed_attributes(session, candidate, photometer)
+            if updated:
+                # self.nZPChange += 1
+                pub.sendMessage(RegisterEvent.ZP_CHANGE, source=source)
+            else:
+                # self.nReboot += 1
+                pub.sendMessage(RegisterEvent.PHOT_RESET, source=source)
+                log.info(
+                    "Detected reboot for photometer %s (MAC = %s)",
+                    candidate.name,
+                    candidate.mac_address,
+                )
         else:
             log.info(
                 "Overridden associations (%s -> %s) and (%s -> %s) with new (%s -> %s) association data",
