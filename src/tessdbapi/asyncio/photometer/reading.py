@@ -40,6 +40,8 @@ from ...model import (
     ReadingInfo4c,
     ReadingInfo,
     ReadingEvent,
+    IMPOSSIBLE_SIGNAL_STRENGTH,
+    IMPOSSIBLE_TEMPERATURE,
 )
 
 # ----------------
@@ -226,14 +228,22 @@ def tess4c_new(
         mag3=reading.mag3,
         freq4=reading.freq4,
         mag4=reading.mag4,
-        box_temperature=reading.box_temperature,
-        sky_temperature=reading.sky_temperature,
+        # Early TESS4C modes doid not provide this
+        box_temperature=reading.box_temperature
+        if reading.box_temperature is not None
+        else IMPOSSIBLE_TEMPERATURE,
+        sky_temperature=reading.sky_temperature
+        if reading.sky_temperature is not None
+        else IMPOSSIBLE_TEMPERATURE,
         azimuth=reading.azimuth,
         altitude=reading.altitude,
         longitude=reading.longitude,
         latitude=reading.latitude,
         elevation=reading.elevation,
-        signal_strength=reading.signal_strength,
+        # Early TESS4C modes doid not provide this
+        signal_strength=reading.signal_strength
+        if reading.signal_strength is not None
+        else IMPOSSIBLE_SIGNAL_STRENGTH,
         hash=reading.hash,
     )
 
