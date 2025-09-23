@@ -81,8 +81,8 @@ TSTAMP_FORMAT = (
     "%Y-%m-%d %H:%M:%S",
     "%Y-%m-%dT%H:%M:%SZ",
     "%Y-%m-%d %H:%M:%SZ",
-    "%Y-%m-%dT%H:%M:%S:%z", # timezone aware that must be converted to UTC
-    "%Y-%m-%d %H:%M:%S:%z", # timezone aware that must be converted to UTC
+    "%Y-%m-%dT%H:%M:%S%z", # timezone aware that must be converted to UTC
+    "%Y-%m-%d %H:%M:%S%z", # timezone aware that must be converted to UTC
 )
 
 # --------------------
