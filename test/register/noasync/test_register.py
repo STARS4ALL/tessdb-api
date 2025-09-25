@@ -445,6 +445,11 @@ def test_assign(database, stars8000, melrose, ucm_full):
             observer_type=ucm_full.type,
             update_readings=True,
         )
+    with database.begin():
+        photometer = photometer_lookup_current(session=database, candidate=stars8000)
+        assert photometer.location_id != -1
+        assert photometer.observer_id != -1
+
 
 def test_assign_range(database, stars8000, melrose, ucm_full):
     assert stars8000.tstamp is not None
@@ -464,6 +469,10 @@ def test_assign_range(database, stars8000, melrose, ucm_full):
             observer_name=ucm_full.name,
             observer_type=ucm_full.type,
             update_readings=True,
-            update_readings_since=datetime(year=2025,month=7,day=2),
-            update_readings_until=datetime(year=2025,month=7,day=4),
+            update_readings_since=datetime(year=2025, month=7, day=2),
+            update_readings_until=datetime(year=2025, month=7, day=4),
         )
+    with database.begin():
+        photometer = photometer_lookup_current(session=database, candidate=stars8000)
+        assert photometer.location_id != -1
+        assert photometer.observer_id != -1
