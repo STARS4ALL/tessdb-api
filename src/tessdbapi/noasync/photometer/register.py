@@ -576,5 +576,5 @@ def photometer_assign(
     if dry_run:
         log.warning("Dry run mode. Database not written")
         session.rollback()
-    else:
+    elif update_readings:
         session.execute(stmt)
