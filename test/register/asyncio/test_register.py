@@ -21,8 +21,11 @@ from tessdbapi.asyncio.photometer.register import (
     observer_id_lookup,
     location_id_lookup,
     photometer_register,
+    photometer_assign,
 )
 
+from tessdbapi.asyncio.observer import observer_create
+from tessdbapi.asyncio.location import location_create
 
 log = logging.getLogger(__name__.split(".")[-1])
 
@@ -30,8 +33,6 @@ log = logging.getLogger(__name__.split(".")[-1])
 # -------------------------------
 # helper functions for test cases
 # -------------------------------
-
-
 
 
 async def photometer_lookup_current(session: Session, candidate: PhotometerInfo) -> Optional[Tess]:
@@ -54,6 +55,7 @@ async def photometer_lookup_history(
     )
     return (await session.scalars(query)).all()
 
+
 async def photometer_lookup_history_current(
     session: Session, candidate: PhotometerInfo
 ) -> Sequence[Tess]:
@@ -66,6 +68,7 @@ async def photometer_lookup_history_current(
         .order_by(Tess.valid_since.asc())
     )
     return (await session.scalars(query)).all()
+
 
 # ------------------
 # Convenient fixtures
@@ -80,7 +83,6 @@ async def database(request):
     yield Session()
     log.info("Teardown code disposes the engine")
     await engine.dispose()
-
 
 
 @pytest.mark.asyncio
@@ -395,9 +397,11 @@ async def test_register_extinct(database, stars8000, stars8002, stars8002ex):
         assert photometer.mac_address == stars8002.mac_address
         assert photometer.valid_state == ValidState.CURRENT
 
+
 # ------------------------------------
 # Replace an photometer back and forth
 # ------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_register_tessw_complex(database, stars8000, stars8000rep, stars8000rep2):
@@ -422,3 +426,49 @@ async def test_register_tessw_complex(database, stars8000, stars8000rep, stars80
         assert len(photometers) == 2
         photometers = await photometer_lookup_history_current(database, candidate=stars8000)
         assert len(photometers) == 1
+
+
+@pytest.mark.asyncio
+async def test_assign(database, stars8000, melrose, ucm_full):
+    assert stars8000.tstamp is not None
+
+    async with database.begin():
+        await location_create(session=database, candidate=melrose)
+        await observer_create(session=database, candidate=ucm_full)
+        await photometer_register(
+            session=database,
+            candidate=stars8000,
+        )
+    async with database.begin():
+        await photometer_assign(
+            database,
+            phot_name=stars8000.name,
+            place=melrose.place,
+            observer_name=ucm_full.name,
+            observer_type=ucm_full.type,
+            update_readings=True,
+        )
+
+
+@pytest.mark.asyncio
+async def test_assign_range(database, stars8000, melrose, ucm_full):
+    assert stars8000.tstamp is not None
+
+    async with database.begin():
+        await location_create(session=database, candidate=melrose)
+        await observer_create(session=database, candidate=ucm_full)
+        await photometer_register(
+            session=database,
+            candidate=stars8000,
+        )
+    async with database.begin():
+        await photometer_assign(
+            database,
+            phot_name=stars8000.name,
+            place=melrose.place,
+            observer_name=ucm_full.name,
+            observer_type=ucm_full.type,
+            update_readings=True,
+            update_readings_since=datetime(year=2025, month=7, day=2),
+            update_readings_until=datetime(year=2025, month=7, day=4),
+        )

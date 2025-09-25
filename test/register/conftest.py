@@ -1,8 +1,7 @@
 import pytest
 from datetime import datetime, timezone
-from tessdbdao import PhotometerModel, RegisterState
-from tessdbapi.model import PhotometerInfo
-
+from tessdbdao import PhotometerModel, RegisterState, ObserverType
+from tessdbapi.model import PhotometerInfo, LocationInfo, ObserverInfo
 
  
 @pytest.fixture()
@@ -182,3 +181,22 @@ def stars993():
         tstamp=None,
     )
 
+
+@pytest.fixture()
+def melrose(request) -> LocationInfo:
+    return LocationInfo(
+        longitude=-3.6124434,
+        latitude=40.4208393,
+        height=900,
+        place="Melrose Place",
+    )
+
+
+@pytest.fixture()
+def ucm_full(request) -> ObserverInfo:
+    return ObserverInfo(
+        type=ObserverType.ORG,
+        name="Universidad Complutense de Madrid",
+        website_url="https://www.ucm.es",
+        acronym="UCM",
+    )

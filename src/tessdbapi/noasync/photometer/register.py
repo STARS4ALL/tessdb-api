@@ -11,6 +11,7 @@
 import logging
 from typing import Optional
 from functools import lru_cache
+from datetime import datetime
 
 # -------------------
 # Third party imports
@@ -20,7 +21,7 @@ from pubsub import pub
 
 
 # from typing_extensions import Self
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from tessdbdao import (
     ObserverType,
     PhotometerModel,
@@ -28,7 +29,7 @@ from tessdbdao import (
     ValidState,
 )
 
-from tessdbdao.noasync import Location, Observer, NameMapping, Tess
+from tessdbdao.noasync import Location, Observer, NameMapping, Tess, TessReadings, Tess4cReadings
 
 # --------------
 # local imports
@@ -497,6 +498,49 @@ def photometer_register(
             override_associations(session, old_mac_entry, old_name_entry, candidate)
             pub.sendMessage(RegisterOp.EXTINCT, source=source)
 
+    if dry_run:
+        log.warning("Dry run mode. Database not written")
+        session.rollback()
+
+
+def photometer_assign(
+    session: Session,
+    phot_name: str,
+    place: str,
+    observer_name: str,
+    observer_type: ObserverType,
+    update_readings: bool = False,
+    update_readings_since: Optional[datetime] = None,
+    update_readings_until: Optional[datetime] = None,
+    dry_run: bool = False,
+) -> None:
+    photometer = find_photometer_by_name(session, phot_name)
+    if not photometer:
+        log.error("Photometer not found => %s", phot_name)
+    observer_id = observer_id_lookup(session, observer_type, observer_name)
+    location_id = location_id_lookup(session, place)
+    photometer.observer_id = observer_id
+    photometer.location_id = location_id
+    session.add(photometer)
+    if update_readings:
+        table = Tess4cReadings if photometer.model == PhotometerModel.TESS4C else TessReadings
+        if any([update_readings_since is None, update_readings_until is None]):
+            query = (
+                update(table)
+                .where(table.tess_id == photometer.tess_id)
+                .values(location_id=location_id, observer_id=observer_id)
+            )
+        else:
+            since_id = int(update_readings_since.strftime("%Y%m%d"))
+            until_id = int(update_readings_until.strftime("%Y%m%d"))
+            query = (
+                update(table)
+                .where(
+                    table.tess_id == photometer.tess_id, table.date_id.between(since_id, until_id)
+                )
+                .values(location_id=location_id, observer_id=observer_id)
+            )
+        session.execute(query)
     if dry_run:
         log.warning("Dry run mode. Database not written")
         session.rollback()

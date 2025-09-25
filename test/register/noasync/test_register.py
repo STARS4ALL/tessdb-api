@@ -17,7 +17,11 @@ from tessdbapi.noasync.photometer.register import (
     observer_id_lookup,
     location_id_lookup,
     photometer_register,
+    photometer_assign,
 )
+
+from tessdbapi.noasync.observer import observer_create
+from tessdbapi.noasync.location import location_create
 
 from . import engine, Session
 
@@ -51,6 +55,7 @@ def photometer_lookup_history(
     )
     return session.scalars(query).all()
 
+
 def photometer_lookup_history_current(
     session: Session, candidate: PhotometerInfo
 ) -> Sequence[Tess]:
@@ -63,6 +68,7 @@ def photometer_lookup_history_current(
         .order_by(Tess.valid_since.asc())
     )
     return session.scalars(query).all()
+
 
 # ------------------
 # Convenient fixtures
@@ -396,7 +402,6 @@ def test_register_extinct(database, stars8000, stars8002, stars8002ex):
         assert photometer.valid_state == ValidState.CURRENT
 
 
-
 def test_register_tessw_complex(database, stars8000, stars8000rep, stars8000rep2):
     assert stars8000.tstamp is not None
     with database.begin():
@@ -420,3 +425,45 @@ def test_register_tessw_complex(database, stars8000, stars8000rep, stars8000rep2
         photometers = photometer_lookup_history_current(database, candidate=stars8000)
         assert len(photometers) == 1
 
+
+def test_assign(database, stars8000, melrose, ucm_full):
+    assert stars8000.tstamp is not None
+
+    with database.begin():
+        location_create(session=database, candidate=melrose)
+        observer_create(session=database, candidate=ucm_full)
+        photometer_register(
+            session=database,
+            candidate=stars8000,
+        )
+    with database.begin():
+        photometer_assign(
+            database,
+            phot_name=stars8000.name,
+            place=melrose.place,
+            observer_name=ucm_full.name,
+            observer_type=ucm_full.type,
+            update_readings=True,
+        )
+
+def test_assign_range(database, stars8000, melrose, ucm_full):
+    assert stars8000.tstamp is not None
+
+    with database.begin():
+        location_create(session=database, candidate=melrose)
+        observer_create(session=database, candidate=ucm_full)
+        photometer_register(
+            session=database,
+            candidate=stars8000,
+        )
+    with database.begin():
+        photometer_assign(
+            database,
+            phot_name=stars8000.name,
+            place=melrose.place,
+            observer_name=ucm_full.name,
+            observer_type=ucm_full.type,
+            update_readings=True,
+            update_readings_since=datetime(year=2025,month=7,day=2),
+            update_readings_until=datetime(year=2025,month=7,day=4),
+        )
