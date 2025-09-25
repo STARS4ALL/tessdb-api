@@ -519,6 +519,14 @@ def photometer_assign(
         log.error("Photometer not found => %s", phot_name)
     observer_id = observer_id_lookup(session, observer_type, observer_name)
     location_id = location_id_lookup(session, place)
+    log.info(
+        "Assigning to tess_id = %d with previous location_id = %d and observer_id = %d new location_id = %d and new observer_id = %d",
+        photometer.tess_id,
+        photometer.location_id,
+        photometer.observer_id,
+        location_id,
+        observer_id,
+    )
     photometer.observer_id = observer_id
     photometer.location_id = location_id
     session.add(photometer)
@@ -526,6 +534,15 @@ def photometer_assign(
         table = Tess4cReadings if photometer.model == PhotometerModel.TESS4C else TessReadings
         if any([update_readings_since is None, update_readings_until is None]):
             query = (
+                select(func.count())
+                .select_from(table)
+                .where(
+                    table.tess_id == photometer.tess_id,
+                    table.location_id == location_id,
+                    table.observer_id == observer_id,
+                )
+            )
+            stmt = (
                 update(table)
                 .where(table.tess_id == photometer.tess_id)
                 .values(location_id=location_id, observer_id=observer_id)
@@ -534,13 +551,26 @@ def photometer_assign(
             since_id = int(update_readings_since.strftime("%Y%m%d"))
             until_id = int(update_readings_until.strftime("%Y%m%d"))
             query = (
+                select(func.count())
+                .select_from(table)
+                .where(
+                    table.tess_id == photometer.tess_id,
+                    table.location_id == location_id,
+                    table.observer_id == observer_id,
+                    table.date_id.between(since_id, until_id),
+                )
+            )
+            stmt = (
                 update(table)
                 .where(
                     table.tess_id == photometer.tess_id, table.date_id.between(since_id, until_id)
                 )
                 .values(location_id=location_id, observer_id=observer_id)
             )
-        session.execute(query)
+        N = session.scalars(query).one()
+        log.info("This will affect %d rows", N)
     if dry_run:
         log.warning("Dry run mode. Database not written")
         session.rollback()
+    else:
+        session.execute(stmt)

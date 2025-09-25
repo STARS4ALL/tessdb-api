@@ -10,7 +10,7 @@
 
 import logging
 
-from typing import Optional, Sequence, List, Tuple
+from typing import Optional, Sequence, List
 
 # -------------------
 # Third party imports
