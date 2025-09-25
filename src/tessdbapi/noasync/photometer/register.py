@@ -517,6 +517,7 @@ def photometer_assign(
     photometer = find_photometer_by_name(session, phot_name)
     if not photometer:
         log.error("Photometer not found => %s", phot_name)
+        return
     observer_id = observer_id_lookup(session, observer_type, observer_name)
     location_id = location_id_lookup(session, place)
     log.info(
@@ -527,6 +528,9 @@ def photometer_assign(
         location_id,
         observer_id,
     )
+    if all([photometer.observer_id == observer_id, photometer.location_id == location_id]):
+        log.info("No change in location_id nor observer_id. nothing to do.")
+        return
     photometer.observer_id = observer_id
     photometer.location_id = location_id
     session.add(photometer)
