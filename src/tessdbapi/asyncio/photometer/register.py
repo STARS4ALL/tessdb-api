@@ -527,17 +527,19 @@ async def photometer_assign(
     if not photometer:
         log.error("Photometer not found => %s", phot_name)
         return
+    old_observer_id = photometer.observer_id
+    old_location_id = photometer.location_id
     observer_id = await observer_id_lookup(session, observer_type, observer_name)
     location_id = await location_id_lookup(session, place)
     log.info(
         "Assigning to tess_id = %d with previous location_id = %d and observer_id = %d new location_id = %d and new observer_id = %d",
         photometer.tess_id,
-        photometer.location_id,
-        photometer.observer_id,
+        old_location_id,
+        old_observer_id,
         location_id,
         observer_id,
     )
-    if all([photometer.observer_id == observer_id, photometer.location_id == location_id]):
+    if all([old_observer_id == observer_id, old_location_id == location_id]):
         log.info("No change in location_id nor observer_id. nothing to do.")
         return
     photometer.observer_id = observer_id
@@ -551,8 +553,8 @@ async def photometer_assign(
                 .select_from(table)
                 .where(
                     table.tess_id == photometer.tess_id,
-                    table.location_id == location_id,
-                    table.observer_id == observer_id,
+                    table.location_id == old_location_id,
+                    table.observer_id == old_observer_id,
                 )
             )
             stmt = (
@@ -568,8 +570,8 @@ async def photometer_assign(
                 .select_from(table)
                 .where(
                     table.tess_id == photometer.tess_id,
-                    table.location_id == location_id,
-                    table.observer_id == observer_id,
+                    table.location_id == old_location_id,
+                    table.observer_id == old_observer_id,
                     table.date_id.between(since_id, until_id),
                 )
             )
