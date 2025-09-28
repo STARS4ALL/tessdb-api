@@ -249,17 +249,21 @@ def _photometer_looped_write(
     source: ReadingSource,
 ):
     """One by one commit of database records"""
+    N = len(items)
+    rej = 0
     for i, dbobj in enumerate(dbobjs):
         with session.begin():
             session.add(dbobj)
             try:
                 session.commit()
             except Exception:
+                rej += 1
                 pub.sendMessage(ReadingEvent.SQL_ERROR, source=source)
                 log.warning("Discarding reading by SQL Integrity error: %s", dict(items[i][0]))
                 session.rollback()
             else:
                 pub.sendMessage(ReadingEvent.SQL_OK, source=source, count=1)
+    log.info("Rejected [%d/%d] database writes in loop", rej, N)
 
 
 # ==================
