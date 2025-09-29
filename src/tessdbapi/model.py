@@ -166,8 +166,12 @@ def is_hash(value: str) -> str:
         raise ValueError(f"hash {value} outside [A-Z1-9] range")
     return value
 
-def is_zero_point(value: Union[str, float]) -> float:
-    if isinstance(value, float):
+def is_zero_point(value: Union[str, int, float]) -> float:
+    if isinstance(value, int):
+        if not (ZP_LOW <= value <= ZP_HIGH):
+            raise ValueError(f"Zero Point {value} out of bounds [{ZP_LOW}-{ZP_HIGH}]")
+        return value
+    elif isinstance(value, float):
         if not (ZP_LOW <= value <= ZP_HIGH):
             raise ValueError(f"Zero Point {value} out of bounds [{ZP_LOW}-{ZP_HIGH}]")
         return value
@@ -190,7 +194,7 @@ AltitudeType = Annotated[float, AfterValidator(is_altitude)]
 Stars4AllName = Annotated[str, AfterValidator(is_stars4all_name)]
 HashType = Annotated[str, AfterValidator(is_hash)]
 TimestampType = Annotated[Union[str, datetime, None], BeforeValidator(is_datetime)]
-ZeroPointType = Annotated[Union[str, float], BeforeValidator(is_zero_point)]
+ZeroPointType = Annotated[Union[str, int, float], BeforeValidator(is_zero_point)]
 
 # ---------------
 # Pydantic models
