@@ -133,6 +133,7 @@ async def resolve_references(
     latest: bool,
     source: ReadingSource,
 ) -> Optional[ReferencesInfo]:
+    plog = logging.getLogger(reading.name)
     pub.sendMessage(ReadingEvent.WRITE_REQUEST, source=source)
     units_id = await resolve_units_id(session, source, reading.tstamp_src)
     try:
@@ -141,7 +142,12 @@ async def resolve_references(
         )
         if phot is None:
             pub.sendMessage(ReadingEvent.NOT_REGISTERED, source=source)
-            log.warning(
+            log.info(
+                "No TESS %s registered ! => %s",
+                reading.name,
+                dict(reading),
+            )
+            plog.debug(
                 "No TESS %s registered ! => %s",
                 reading.name,
                 dict(reading),
@@ -149,14 +155,18 @@ async def resolve_references(
             return None
     except HashMismatchError as e:
         pub.sendMessage(ReadingEvent.HASH_MISMATCH, source=source)
-        log.warning(
+        log.info(
+            "[%s] Reading rejected by hash mismatch: %s => %s", reading.name, str(e), dict(reading)
+        )
+        plog.debug(
             "[%s] Reading rejected by hash mismatch: %s => %s", reading.name, str(e), dict(reading)
         )
         return None
     else:
         if auth_filter and not phot.authorised:
             pub.sendMessage(ReadingEvent.NOT_AUTHORISED, source=source)
-            log.warning("[%s]: Not authorised: %s", reading.name, dict(reading))
+            log.info("[%s]: Not authorised: %s", reading.name, dict(reading))
+            plog.debug("[%s]: Not authorised: %s", reading.name, dict(reading))
             return None
         date_id, time_id = split_datetime(reading.tstamp)
         return ReferencesInfo(

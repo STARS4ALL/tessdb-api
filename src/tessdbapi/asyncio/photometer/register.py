@@ -229,6 +229,7 @@ async def renaming_photometer(
 async def replacing_photometer(
     session: Session, old_mapping: NameMapping, candidate: PhotometerInfo, source: ReadingSource
 ) -> None:
+    plog = logging.getLogger(candidate.name)
     old_mapping.valid_until = candidate.tstamp
     old_mapping.valid_state = ValidState.EXPIRED
     session.add(old_mapping)
@@ -251,7 +252,8 @@ async def replacing_photometer(
     another_tess = (await session.scalars(query)).all()
     if another_tess:
         another_tess = another_tess[0]
-        log.warning("Replacing back %s", dict(candidate))
+        log.info("Replacing back %s", dict(candidate))
+        plog.debug("Replacing back %s", dict(candidate))
         updated = maybe_update_managed_attributes(session, candidate, another_tess)
         if updated:
             # self.nZPChange += 1
@@ -293,6 +295,7 @@ async def replacing_photometer(
 
 
 def is_tess4c_changed(photometer: Tess, candidate: PhotometerInfo) -> bool:
+    plog = logging.getLogger(candidate.name)
     cand_zps = (candidate.zp1, candidate.zp2, candidate.zp3, candidate.zp4)
     phot_zps = (photometer.zp1, photometer.zp2, photometer.zp3, photometer.zp4)
     cand_off = (candidate.offset1, candidate.offset2, candidate.offset3, candidate.offset4)
@@ -311,8 +314,24 @@ def is_tess4c_changed(photometer: Tess, candidate: PhotometerInfo) -> bool:
             phot_zps,
             cand_zps,
         )
+        plog.debug(
+            "%s %s (%s) changing ZPs from %s to %s",
+            candidate.model,
+            candidate.name,
+            candidate.mac_address,
+            phot_zps,
+            cand_zps,
+        )
     if not unchanged_off:
         log.info(
+            "%s %s (%s) changing Hz Offset from %s to %s",
+            candidate.model,
+            candidate.name,
+            candidate.mac_address,
+            phot_off,
+            cand_off,
+        )
+        plog.debug(
             "%s %s (%s) changing Hz Offset from %s to %s",
             candidate.model,
             candidate.name,
@@ -329,10 +348,19 @@ def is_tess4c_changed(photometer: Tess, candidate: PhotometerInfo) -> bool:
             phot_fil,
             cand_fil,
         )
+        plog.debug(
+            "%s %s (%s) changing Filters from %s to %s",
+            candidate.model,
+            candidate.name,
+            candidate.mac_address,
+            phot_fil,
+            cand_fil,
+        )
     return not all([unchanged_zps, unchanged_off, unchanged_fil])
 
 
 def is_tessw_changed(photometer: Tess, candidate: PhotometerInfo) -> bool:
+    plog = logging.getLogger(candidate.name)
     cand_zps = (candidate.zp1,)
     phot_zps = (photometer.zp1,)
     cand_off = (candidate.offset1,)
@@ -348,8 +376,24 @@ def is_tessw_changed(photometer: Tess, candidate: PhotometerInfo) -> bool:
             phot_zps,
             cand_zps,
         )
+        plog.debug(
+            "%s %s (%s) changing ZP from %s to %s",
+            candidate.model,
+            candidate.name,
+            candidate.mac_address,
+            phot_zps,
+            cand_zps,
+        )
     if not unchanged_off:
         log.info(
+            "%s %s (%s) changing Hz Offset from %s to %s",
+            candidate.model,
+            candidate.name,
+            candidate.mac_address,
+            phot_off,
+            cand_off,
+        )
+        plog.debug(
             "%s %s (%s) changing Hz Offset from %s to %s",
             candidate.model,
             candidate.name,
@@ -427,6 +471,7 @@ async def photometer_register(
     source: ReadingSource = ReadingSource.DIRECT,
     dry_run: bool = False,
 ) -> None:
+    plog = logging.getLogger(candidate.name)
     old_mac_entry = await lookup_mac(session, candidate.mac_address)
     old_name_entry = await lookup_name(session, candidate.name)
 
@@ -438,6 +483,11 @@ async def photometer_register(
         # self.nCreation += 1
         pub.sendMessage(RegisterOp.CREATE, source=source)
         log.info(
+            "Brand new photometer registered: %s (MAC = %s)",
+            candidate.name,
+            candidate.mac_address,
+        )
+        plog.debug(
             "Brand new photometer registered: %s (MAC = %s)",
             candidate.name,
             candidate.mac_address,
@@ -456,6 +506,12 @@ async def photometer_register(
             old_mac_entry.mac_address,
             candidate.name,
         )
+        plog.debug(
+            "Renamed photometer %s (MAC = %s) with brand new name %s",
+            old_mac_entry.name,
+            old_mac_entry.mac_address,
+            candidate.name,
+        )
     elif not old_mac_entry and old_name_entry:
         # Repairing a broken photometer
         # A (MAC, name) pair exist in the name_to_mac_t table with the same name as the candidate
@@ -466,6 +522,12 @@ async def photometer_register(
         await replacing_photometer(session, old_name_entry, candidate, source)
         pub.sendMessage(RegisterOp.REPLACE, source=source)
         log.info(
+            "Replaced photometer tagged %s (old MAC = %s) with new one with MAC %s",
+            old_name_entry.name,
+            old_name_entry.mac_address,
+            candidate.mac_address,
+        )
+        plog.debug(
             "Replaced photometer tagged %s (old MAC = %s) with new one with MAC %s",
             old_name_entry.name,
             old_name_entry.mac_address,
@@ -503,12 +565,12 @@ async def photometer_register(
                 candidate.name,
                 candidate.mac_address,
             )
-            log.warning("Label %s has no associated photometer now!", old_mac_entry.name)
+            log.info("Label %s has no associated photometer now!", old_mac_entry.name)
             await override_associations(session, old_mac_entry, old_name_entry, candidate)
             pub.sendMessage(RegisterOp.EXTINCT, source=source)
 
     if dry_run:
-        log.warning("Dry run mode. Database not written")
+        log.info("Dry run mode. Database not written")
         await session.rollback()
 
 
@@ -523,9 +585,11 @@ async def photometer_assign(
     update_readings_until: Optional[datetime] = None,
     dry_run: bool = False,
 ) -> None:
+    plog = logging.getLogger(phot_name)
     photometer = await find_photometer_by_name(session, phot_name)
     if not photometer:
         log.error("Photometer not found => %s", phot_name)
+        plog.debug("Photometer not found => %s", phot_name)
         return
     old_observer_id = photometer.observer_id
     old_location_id = photometer.location_id
@@ -539,8 +603,17 @@ async def photometer_assign(
         location_id,
         observer_id,
     )
+    plog.debug(
+        "Assigning to tess_id = %d with previous location_id = %d and observer_id = %d new location_id = %d and new observer_id = %d",
+        photometer.tess_id,
+        old_location_id,
+        old_observer_id,
+        location_id,
+        observer_id,
+    )
     if all([old_observer_id == observer_id, old_location_id == location_id]):
         log.info("No change in location_id nor observer_id. nothing to do.")
+        plog.debug("No change in location_id nor observer_id. nothing to do.")
         return
     photometer.observer_id = observer_id
     photometer.location_id = location_id
@@ -584,6 +657,7 @@ async def photometer_assign(
             )
         N = (await session.scalars(query)).one()
         log.info("This will affect %d rows", N)
+        plog.debug("This will affect %d rows", N)
     if dry_run:
         log.warning("Dry run mode. Database not written")
         await session.rollback()
