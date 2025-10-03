@@ -33,7 +33,7 @@ from ..model import ObserverInfo, INFINITE_T
 # Global variables
 # ----------------
 
-log = logging.getLogger(__name__.split(".")[-1])
+log = logging.getLogger("dbase")
 
 
 async def observers_list(session: Session) -> Sequence[Observer]:

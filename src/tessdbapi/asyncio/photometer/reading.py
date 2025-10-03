@@ -50,7 +50,7 @@ from ...model import (
 
 PhotReadings = Union[TessReadings, Tess4cReadings]
 
-log = logging.getLogger(__name__.split(".")[-1])
+log = logging.getLogger("dbase")
 
 # ===================================
 # Registry process auxiliar functions

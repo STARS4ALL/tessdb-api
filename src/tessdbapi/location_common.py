@@ -31,7 +31,7 @@ from .model import EARTH_RADIUS
 # Global variables
 # ----------------
 
-log = logging.getLogger(__name__.split(".")[-1])
+log = logging.getLogger("dbase")
 geolocator = Nominatim(user_agent="STARS4ALL project")
 tf = TimezoneFinder()
 

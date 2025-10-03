@@ -50,7 +50,7 @@ FREQ_EPS = 0.001
 # Global variables
 # ----------------
 
-log = logging.getLogger(__name__.split(".")[-1])
+log = logging.getLogger("dbase")
 
 # ===================================
 # Registry process auxiliar functions

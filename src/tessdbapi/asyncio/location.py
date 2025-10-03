@@ -11,7 +11,7 @@
 import asyncio
 import logging
 
-from typing import Optional, Sequence, Tuple, List
+from typing import Optional, Sequence, List
 
 # -------------------
 # Third party imports
@@ -35,7 +35,7 @@ from ..location_common import geolocate, distance
 # ----------------
 
 
-log = logging.getLogger(__name__.split(".")[-1])
+log = logging.getLogger("dbase")
 
 # -------------
 # API functions

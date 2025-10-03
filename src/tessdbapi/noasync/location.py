@@ -33,7 +33,7 @@ from ..location_common import geolocate, distance
 # Global variables
 # ----------------
 
-log = logging.getLogger(__name__.split(".")[-1])
+log = logging.getLogger("dbase")
 
 
 def location_distances_from(candidate: LocationInfo, locations: Sequence[Location]) -> List[float]:
