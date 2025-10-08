@@ -25,13 +25,13 @@ from geopy.extra.rate_limiter import RateLimiter
 # local imports
 # -------------
 
-from .model import EARTH_RADIUS
+from .model import EARTH_RADIUS, LogSpace
 
 # ----------------
 # Global variables
 # ----------------
 
-log = logging.getLogger("dbase")
+log = logging.getLogger(LogSpace.DBASE)
 geolocator = Nominatim(user_agent="STARS4ALL project")
 tf = TimezoneFinder()
 

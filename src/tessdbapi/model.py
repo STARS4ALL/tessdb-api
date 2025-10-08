@@ -68,6 +68,13 @@ class ReadingEvent(StrEnum):
     NOT_REGISTERED = "Not Registered"
     WRITE_REQUEST = "Write request"
 
+class LogSpace(StrEnum):
+    FILTER = "filter"
+    DBASE = "dbase"
+
+class Topic(StrEnum):
+    PHOT_LOG_ACTIVE = "server.plog_name"
+
 
 EARTH_RADIUS = 6371009.0  # in meters
 GEO_COORD_EPSILON = (2 / EARTH_RADIUS) * (180 / pi)  # in degrees

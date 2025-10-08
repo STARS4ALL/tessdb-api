@@ -65,10 +65,10 @@ push:
 # =============
 
 test pkg async module:
-    uv run pytest test/{{pkg}}/{{async}}/test_{{module}}.py
+    uv run pytest tests/{{pkg}}/{{async}}/test_{{module}}.py
 
 testf pkg async module func:
-    uv run pytest test/{{pkg}}/{{async}}/test_{{module}}.py::test_{{func}}
+    uv run pytest tests/{{pkg}}/{{async}}/test_{{module}}.py::test_{{func}}
 
 
 # =================

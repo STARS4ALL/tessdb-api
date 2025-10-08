@@ -27,13 +27,13 @@ from tessdbdao.asyncio import Observer
 # -------------
 
 from ..util import Session
-from ..model import ObserverInfo, INFINITE_T
+from ..model import ObserverInfo, INFINITE_T, LogSpace
 
 # ----------------
 # Global variables
 # ----------------
 
-log = logging.getLogger("dbase")
+log = logging.getLogger(LogSpace.DBASE)
 
 
 async def observers_list(session: Session) -> Sequence[Observer]:

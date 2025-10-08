@@ -26,14 +26,14 @@ from tessdbdao.noasync import Location
 # -------------
 
 from ..util import Session
-from ..model import LocationInfo, GEO_COORD_EPSILON as EPSILON
+from ..model import LocationInfo, LogSpace, GEO_COORD_EPSILON as EPSILON
 from ..location_common import geolocate, distance
 
 # ----------------
 # Global variables
 # ----------------
 
-log = logging.getLogger("dbase")
+log = logging.getLogger(LogSpace.DBASE)
 
 
 def location_distances_from(candidate: LocationInfo, locations: Sequence[Location]) -> List[float]:

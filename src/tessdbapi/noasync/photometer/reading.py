@@ -26,6 +26,7 @@ from tessdbdao import (
     TimestampSource,
     ReadingSource,
     ValidState,
+    LogSpace
 )
 
 
@@ -52,7 +53,7 @@ from ...model import (
 
 PhotReadings = Union[TessReadings, Tess4cReadings]
 
-log = logging.getLogger("dbase")
+log = logging.getLogger(LogSpace.DBASE)
 
 # ===================================
 # Registry process auxiliar functions

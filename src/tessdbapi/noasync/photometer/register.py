@@ -41,6 +41,7 @@ from ...model import (
     RegisterOp,
     RegisterEvent,
     INFINITE_T,
+    LogSpace
 )
 
 ZP_EPS = 0.005
@@ -50,7 +51,7 @@ FREQ_EPS = 0.001
 # Global variables
 # ----------------
 
-log = logging.getLogger("dbase")
+log = logging.getLogger(LogSpace.DBASE)
 
 # ===================================
 # Registry process auxiliar functions

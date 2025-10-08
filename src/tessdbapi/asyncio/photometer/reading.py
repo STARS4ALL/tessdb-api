@@ -40,6 +40,7 @@ from ...model import (
     ReadingInfo4c,
     ReadingInfo,
     ReadingEvent,
+    LogSpace,
     IMPOSSIBLE_SIGNAL_STRENGTH,
     IMPOSSIBLE_TEMPERATURE,
 )
@@ -50,7 +51,7 @@ from ...model import (
 
 PhotReadings = Union[TessReadings, Tess4cReadings]
 
-log = logging.getLogger("dbase")
+log = logging.getLogger(LogSpace.DBASE)
 
 # ===================================
 # Registry process auxiliar functions
