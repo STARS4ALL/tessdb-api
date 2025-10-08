@@ -3,9 +3,8 @@ import itertools
 from typing import Optional, List, Tuple
 from collections import deque
 
-from pubsub import pub
 from tessdbdao import PhotometerModel
-from .model import Topic, ReadingInfo, ReadingInfo4c
+from .model import ReadingInfo, ReadingInfo4c
 
 
 class Sampler:
@@ -17,7 +16,6 @@ class Sampler:
         if obj is None:
             obj = cls(name, divisor)
             cls.instances[name] = obj
-            pub.sendMessage(Topic.PHOT_LOG_ACTIVE, name=name)
         return obj
 
     def __init__(self, name, divisor: int) -> None:
@@ -60,13 +58,13 @@ class Sampler:
 
 class LookAheadFilter:
     instances = dict()
-    flushing_instances = set()  # filters that are flushing
+    flushing_names = set()  # filters that are flushing
 
     @classmethod
     def reset(cls) -> None:
         """For testing purposes"""
         cls.instances = dict()
-        cls.flushing_instances = set()
+        cls.flushing_names = set()
 
     @classmethod
     def instance(cls, name: str, window_size: int, flushing: bool, buffered: bool):
@@ -92,7 +90,7 @@ class LookAheadFilter:
         self.log = logging.getLogger(name)
         # some filters may start in flushing state
         if flushing:
-            LookAheadFilter.flushing_instances.add(name)
+            LookAheadFilter.flushing_names.add(name)
 
     def __len__(self) -> int:
         return len(self._fifo)
@@ -207,7 +205,7 @@ class LookAheadFilter:
             M = min(N, self._middle)
             extra_samples = [self._fifo[i] for i in range(M)]  # saves what's needed to be saved
             self._fifo.clear()  # queue closed for ever
-            LookAheadFilter.flushing_instances.add(self._name)
+            LookAheadFilter.flushing_names.add(self._name)
             self.log.debug("%s Flushing %d extra readings", self.__class__.__name__, M)
         self.log.debug(
             "%s chosen reading #seq = %d", self.__class__.__name__, sample.sequence_number

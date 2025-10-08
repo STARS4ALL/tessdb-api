@@ -68,12 +68,10 @@ class ReadingEvent(StrEnum):
     NOT_REGISTERED = "Not Registered"
     WRITE_REQUEST = "Write request"
 
+
 class LogSpace(StrEnum):
     FILTER = "filter"
     DBASE = "dbase"
-
-class Topic(StrEnum):
-    PHOT_LOG_ACTIVE = "server.plog_name"
 
 
 EARTH_RADIUS = 6371009.0  # in meters
@@ -88,8 +86,8 @@ TSTAMP_FORMAT = (
     "%Y-%m-%d %H:%M:%S",
     "%Y-%m-%dT%H:%M:%SZ",
     "%Y-%m-%d %H:%M:%SZ",
-    "%Y-%m-%dT%H:%M:%S%z", # timezone aware that must be converted to UTC
-    "%Y-%m-%d %H:%M:%S%z", # timezone aware that must be converted to UTC
+    "%Y-%m-%dT%H:%M:%S%z",  # timezone aware that must be converted to UTC
+    "%Y-%m-%d %H:%M:%S%z",  # timezone aware that must be converted to UTC
 )
 
 # --------------------
@@ -173,6 +171,7 @@ def is_hash(value: str) -> str:
         raise ValueError(f"hash {value} outside [A-Z1-9] range")
     return value
 
+
 def is_zero_point(value: Union[str, int, float]) -> float:
     if isinstance(value, int):
         if not (ZP_LOW <= value <= ZP_HIGH):
@@ -188,6 +187,8 @@ def is_zero_point(value: Union[str, int, float]) -> float:
             raise ValueError(f"Zero Point {value} out of bounds [{ZP_LOW}-{ZP_HIGH}]")
         return value
     return ValueError(f"{value} has an unsupported type: {type(value)}")
+
+
 # --------------------
 # Pydantic annotations
 # --------------------
@@ -232,7 +233,6 @@ class PhotometerInfo(BaseModel):
 
     def __lt__(self, other: Self) -> bool:
         return self.tstamp < other.tstamp
-
 
     @model_validator(mode="after")
     def validate_zero_points(self) -> Self:
