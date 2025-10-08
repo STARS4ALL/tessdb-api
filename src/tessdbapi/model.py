@@ -70,7 +70,7 @@ class ReadingEvent(StrEnum):
 
 class LogSpace(StrEnum):
     FILTER = "filter"
-    DBASE = "dbase"
+    DBASE = "dbase "
 
 class Topic(StrEnum):
     PHOT_LOG_ACTIVE = "server.plog_name"
