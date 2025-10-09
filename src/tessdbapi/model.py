@@ -48,18 +48,6 @@ IMPOSSIBLE_TEMPERATURE = -273.15
 IMPOSSIBLE_SIGNAL_STRENGTH = 99
 
 
-class RegisterOp(StrEnum):
-    CREATE = "CR"
-    RENAME = "RN"
-    REPLACE = "RP"
-    EXTINCT = "XX"
-
-
-class RegisterEvent(StrEnum):
-    ZP_CHANGE = "Zero Point change"
-    PHOT_RESET = "Photometer reset"
-
-
 class ReadingEvent(StrEnum):
     SQL_OK = "SQL ok"
     SQL_ERROR = "SQL error"
