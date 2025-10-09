@@ -10,14 +10,12 @@
 
 import logging
 from datetime import datetime
+from dataclasses import dataclass
 from typing import Optional, Tuple, Iterable, Sequence, List, Union
 
 # -------------------
 # Third party imports
 # -------------------
-
-from pubsub import pub
-
 
 # from typing_extensions import Self
 from sqlalchemy import select, and_
@@ -39,11 +37,30 @@ from ...model import (
     ReadingInfo1c,
     ReadingInfo4c,
     ReadingInfo,
-    ReadingEvent,
     LogSpace,
     IMPOSSIBLE_SIGNAL_STRENGTH,
     IMPOSSIBLE_TEMPERATURE,
 )
+
+
+@dataclass(slots=True)
+class Stats:
+    nReadings: int = 0
+    rejNotRegistered: int = 0
+    rejHashMismatch: int = 0
+    rejNotAuthorised: int = 0
+    rejDuplicate: int = 0
+    rejOther: int = 0
+
+    def reset(self):
+        """Resets stat counters"""
+        self.nReadings = 0
+        self.rejNotRegistered = 0
+        self.rejHashMismatch = 0
+        self.rejNotAuthorised = 0
+        self.rejDuplicate = 0
+        self.rejOther = 0
+
 
 # ----------------
 # Global variables
@@ -52,6 +69,7 @@ from ...model import (
 PhotReadings = Union[TessReadings, Tess4cReadings]
 
 log = logging.getLogger(LogSpace.DBASE)
+stats = Stats()
 
 # ===================================
 # Registry process auxiliar functions
@@ -134,15 +152,15 @@ async def resolve_references(
     latest: bool,
     source: ReadingSource,
 ) -> Optional[ReferencesInfo]:
+    stats.nReadings += 1
     plog = logging.getLogger(reading.name)
-    pub.sendMessage(ReadingEvent.WRITE_REQUEST, source=source)
     units_id = await resolve_units_id(session, source, reading.tstamp_src)
     try:
         phot = await find_photometer_by_name(
             session, reading.name, reading.hash, reading.tstamp, latest
         )
         if phot is None:
-            pub.sendMessage(ReadingEvent.NOT_REGISTERED, source=source)
+            stats.rejNotRegistered += 1
             log.info(
                 "No TESS %s registered ! => %s",
                 reading.name,
@@ -155,7 +173,7 @@ async def resolve_references(
             )
             return None
     except HashMismatchError as e:
-        pub.sendMessage(ReadingEvent.HASH_MISMATCH, source=source)
+        stats.rejHashMismatch += 1
         log.info(
             "[%s] Reading rejected by hash mismatch: %s => %s", reading.name, str(e), dict(reading)
         )
@@ -165,7 +183,7 @@ async def resolve_references(
         return None
     else:
         if auth_filter and not phot.authorised:
-            pub.sendMessage(ReadingEvent.NOT_AUTHORISED, source=source)
+            stats.rejNotAuthorised += 1
             log.info("[%s]: Not authorised: %s", reading.name, dict(reading))
             plog.debug("[%s]: Not authorised: %s", reading.name, dict(reading))
             return None
@@ -273,17 +291,19 @@ async def _photometer_looped_write(
     source: ReadingSource,
 ):
     """One by one commit of database records"""
+    N = len(items)
+    rej = 0
     for i, dbobj in enumerate(dbobjs):
         async with session.begin():
             session.add(dbobj)
             try:
                 await session.commit()
             except Exception:
-                pub.sendMessage(ReadingEvent.SQL_ERROR, source=source)
+                rej += 1
+                stats.rejDuplicate += 1
                 log.warning("Discarding reading by SQL Integrity error: %s", dict(items[i][0]))
                 await session.rollback()
-            else:
-                pub.sendMessage(ReadingEvent.SQL_OK, source=source, count=1)
+    log.info("Rejected [%d/%d] database writes in loop", rej, N)
 
 
 # ==================
@@ -323,7 +343,6 @@ async def photometer_batch_write(
             await session.close()
             await _photometer_looped_write(session, objs, items, source)
         else:
-            pub.sendMessage(ReadingEvent.SQL_OK, source=source, count=len(objs))
             await session.close()
 
 
@@ -349,5 +368,4 @@ async def photometer_resolved_batch_write(
             await session.close()
             await _photometer_looped_write(session, objs, items, source)
         else:
-            pub.sendMessage(ReadingEvent.SQL_OK, source=source, count=len(objs))
             await session.close()
