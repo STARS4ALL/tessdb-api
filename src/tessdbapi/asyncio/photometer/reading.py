@@ -50,7 +50,6 @@ class Stats:
     rejHashMismatch: int = 0
     rejNotAuthorised: int = 0
     rejDuplicate: int = 0
-    rejOther: int = 0
 
     def reset(self):
         """Resets stat counters"""
@@ -59,7 +58,6 @@ class Stats:
         self.rejHashMismatch = 0
         self.rejNotAuthorised = 0
         self.rejDuplicate = 0
-        self.rejOther = 0
 
 
 # ----------------
