@@ -48,29 +48,29 @@ from ...model import (
 
 @dataclass(slots=True)
 class Stats:
-    nReadings: int = 0
-    rejNotRegistered: int = 0
-    rejHashMismatch: int = 0
-    rejNotAuthorised: int = 0
-    rejDuplicate: int = 0
+    num_readings: int = 0
+    rej_not_registered: int = 0
+    rej_hash_mismatch: int = 0
+    rej_not_authorised: int = 0
+    rej_duplicated: int = 0
 
     def reset(self) -> None:
         """Resets stat counters"""
-        self.nReadings = 0
-        self.rejNotRegistered = 0
-        self.rejHashMismatch = 0
-        self.rejNotAuthorised = 0
-        self.rejDuplicate = 0
+        self.num_readings = 0
+        self.rej_not_registered = 0
+        self.rej_hash_mismatch = 0
+        self.rej_not_authorised = 0
+        self.rej_duplicated = 0
 
     def show(self) -> None:
         log.info(
             "DBASE Readings Stats [Readings, NotRegistered, HashMismatch, NotAuthorised, Duplicated] = %s",
             [
-                self.nReadings,
-                self.rejNotRegistered,
-                self.rejHashMismatch,
-                self.rejNotAuthorised,
-                self.rejDuplicate,
+                self.num_readings,
+                self.rej_not_registered,
+                self.rej_hash_mismatch,
+                self.rej_not_authorised,
+                self.rej_duplicated,
             ],
         )
 
@@ -159,13 +159,13 @@ def resolve_references(
     latest: bool,
     source: ReadingSource,
 ) -> Optional[ReferencesInfo]:
-    stats.nReadings += 1
+    stats.num_readings += 1
     plog = logging.getLogger(reading.name)
     units_id = resolve_units_id(session, source, reading.tstamp_src)
     try:
         phot = find_photometer_by_name(session, reading.name, reading.hash, reading.tstamp, latest)
         if phot is None:
-            stats.rejNotRegistered += 1
+            stats.rej_not_registered += 1
             log.info(
                 "No TESS %s registered ! => %s",
                 reading.name,
@@ -178,7 +178,7 @@ def resolve_references(
             )
             return None
     except HashMismatchError as e:
-        stats.rejHashMismatch += 1
+        stats.rej_hash_mismatch += 1
         log.info(
             "[%s] Reading rejected by hash mismatch: %s => %s", reading.name, str(e), dict(reading)
         )
@@ -188,7 +188,7 @@ def resolve_references(
         return None
     else:
         if auth_filter and not phot.authorised:
-            stats.rejNotAuthorised += 1
+            stats.rej_not_authorised += 1
             log.info("[%s]: Not authorised: %s", reading.name, dict(reading))
             plog.debug("[%s]: Not authorised: %s", reading.name, dict(reading))
             return None
@@ -304,7 +304,7 @@ def _photometer_looped_write(
                 session.commit()
             except Exception:
                 rej += 1
-                stats.rejDuplicate += 1
+                stats.rej_duplicated += 1
                 log.warning("Discarding reading by SQL Integrity error: %s", dict(items[i][0]))
                 session.rollback()
     log.info("Rejected [%d/%d] database writes in loop", rej, N)

@@ -40,35 +40,35 @@ FREQ_EPS = 0.001
 
 @dataclass(slots=True)
 class Stats:
-    nRegister: int = 0
-    nZPChange: int = 0
-    nCreation: int = 0
-    nRename: int = 0
-    nReplace: int = 0
-    nReboot: int = 0
-    nExtinct: int = 0
+    num_registered: int = 0
+    num_zp_changed: int = 0
+    num_created: int = 0
+    num_renamed: int = 0
+    num_replaced: int = 0
+    num_rebooted: int = 0
+    num_extinct: int = 0
 
     def reset(self) -> None:
         """Resets stat counters"""
-        self.nRegister = 0
-        self.nZPChange = 0
-        self.nCreation = 0
-        self.nRename = 0
-        self.nReplace = 0
-        self.nReboot = 0
-        self.nExtinct = 0
+        self.num_registered = 0
+        self.num_zp_changed = 0
+        self.num_created = 0
+        self.num_renamed = 0
+        self.num_replaced = 0
+        self.num_rebooted = 0
+        self.num_extinct = 0
 
     def show(self) -> None:
         log.info(
             "DBASE Register Stats [Register, Created, Renamed, Replaced, Extinct, Rebooted, ZP-Changed] = %s",
             [
-                self.nRegister,
-                self.nCreation,
-                self.nRename,
-                self.nReplace,
-                self.nExtinct,
-                self.nReboot,
-                self.nZPChange,
+                self.num_registered,
+                self.num_created,
+                self.num_renamed,
+                self.num_replaced,
+                self.num_extinct,
+                self.num_rebooted,
+                self.num_zp_changed,
             ],
         )
 
@@ -287,7 +287,7 @@ async def replacing_photometer(
         plog.debug("Replacing back %s", dict(candidate))
         updated = maybe_update_managed_attributes(session, candidate, another_tess)
         if updated:
-            stats.nZPChange += 1
+            stats.num_zp_changed += 1
 
     else:
         # Copy the observer and location from the broken photometer
@@ -501,7 +501,7 @@ async def photometer_register(
     source: ReadingSource = ReadingSource.DIRECT,
     dry_run: bool = False,
 ) -> None:
-    stats.nRegister += 1
+    stats.num_registered += 1
     plog = logging.getLogger(candidate.name)
     old_mac_entry = await lookup_mac(session, candidate.mac_address)
     old_name_entry = await lookup_name(session, candidate.name)
@@ -510,7 +510,7 @@ async def photometer_register(
         # Brand new TESS-W case:
         # No existitng (MAC, name) pairs in the name_to_mac_t table
         await add_brand_new_tess(session, candidate, observer_type, observer_name, place)
-        stats.nCreation += 1
+        stats.num_created += 1
         log.info(
             "Brand new photometer registered: %s (MAC = %s)",
             candidate.name,
@@ -525,7 +525,7 @@ async def photometer_register(
         # A clean rename with no collision
         # A (MAC, name) exists in the name_to_mac_t table with the MAC given by the candidate
         # but the name in the candidate does not.
-        stats.nRename += 1
+        stats.num_renamed += 1
         await renaming_photometer(session, old_mac_entry, candidate)
         log.info(
             "Renamed photometer %s (MAC = %s) with brand new name %s",
@@ -544,7 +544,7 @@ async def photometer_register(
         # A (MAC, name) pair exist in the name_to_mac_t table with the same name as the candidate
         # but the MAC in the candiate is new.
         # This means that we are probably replacing a broken photometer with a new one, keeping the same name.
-        stats.nReplace += 1
+        stats.num_replaced += 1
         await replacing_photometer(session, old_name_entry, candidate, source)
         log.info(
             "Replaced photometer tagged %s (old MAC = %s) with new one with MAC %s",
@@ -570,9 +570,9 @@ async def photometer_register(
             photometer = await find_photometer_by_name(session, candidate.name)
             updated = maybe_update_managed_attributes(session, candidate, photometer)
             if updated:
-                stats.nZPChange += 1
+                stats.num_zp_changed += 1
             else:
-                stats.nReboot += 1
+                stats.num_rebooted += 1
                 log.info(
                     "Detected reboot for photometer %s (MAC = %s)",
                     candidate.name,
@@ -590,7 +590,7 @@ async def photometer_register(
             )
             log.info("Label %s has no associated photometer now!", old_mac_entry.name)
             await override_associations(session, old_mac_entry, old_name_entry, candidate)
-            stats.nExtinct += 1
+            stats.num_extinct += 1
 
     if dry_run:
         log.info("Dry run mode. Database not written")
