@@ -54,13 +54,25 @@ class Stats:
     rejNotAuthorised: int = 0
     rejDuplicate: int = 0
 
-    def reset(self):
+    def reset(self) -> None:
         """Resets stat counters"""
         self.nReadings = 0
         self.rejNotRegistered = 0
         self.rejHashMismatch = 0
         self.rejNotAuthorised = 0
         self.rejDuplicate = 0
+
+    def show(self) -> None:
+        log.info(
+            "DBASE Readings Stats [Readings, NotRegistered, HashMismatch, NotAuthorised, Duplicated] = %s",
+            [
+                self.nReadings,
+                self.rejNotRegistered,
+                self.rejHashMismatch,
+                self.rejNotAuthorised,
+                self.rejDuplicate,
+            ],
+        )
 
 
 # ----------------

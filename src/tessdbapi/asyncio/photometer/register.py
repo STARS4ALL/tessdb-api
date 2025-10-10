@@ -48,7 +48,7 @@ class Stats:
     nReboot: int = 0
     nExtinct: int = 0
 
-    def reset(self):
+    def reset(self) -> None:
         """Resets stat counters"""
         self.nRegister = 0
         self.nZPChange = 0
@@ -57,6 +57,20 @@ class Stats:
         self.nReplace = 0
         self.nReboot = 0
         self.nExtinct = 0
+
+    def show(self) -> None:
+        log.info(
+            "DBASE Register Stats [Register, Created, Renamed, Replaced, Extinct, Rebooted, ZP-Changed] = %s",
+            [
+                self.nRegister,
+                self.nCreation,
+                self.nRename,
+                self.nReplace,
+                self.nExtinct,
+                self.nReboot,
+                self.nZPChange,
+            ],
+        )
 
 
 # ----------------
