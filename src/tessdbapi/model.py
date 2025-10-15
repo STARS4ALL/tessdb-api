@@ -148,6 +148,7 @@ def is_altitude(value: float) -> float:
 
 
 def is_stars4all_name(value: str) -> str:
+    value = value.lower() # Make case-insensitive
     matchobj = STARS4ALL_NAME_PATTERN.match(value)
     if not matchobj:
         raise ValueError(f"name {value} is not a legal STARS4ALL name")
