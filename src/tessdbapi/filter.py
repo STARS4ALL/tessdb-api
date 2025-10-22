@@ -11,19 +11,27 @@ class Sampler:
     instances = dict()
 
     @classmethod
-    def instance(cls, name: str, divisor: int):
+    def instance(cls, name: str):
         obj = cls.instances.get(name)
         if obj is None:
-            obj = cls(name, divisor)
+            obj = cls(name)
             cls.instances[name] = obj
         return obj
 
-    def __init__(self, name, divisor: int) -> None:
+    def __init__(self, name: str) -> None:
+        self._name = name
+        self._configured = False
+        self.log = logging.getLogger(name)
+
+    @property
+    def configured(self) -> bool:
+        return self._configured
+
+    def configure(self, divisor: int) -> None:
         self._divisor = divisor
         self._next_divisor = divisor
         self._iter = itertools.cycle(range(divisor))
-        self._name = name
-        self.log = logging.getLogger(name)
+        self._configured = True
 
     @property
     def divisor(self) -> int:
@@ -67,14 +75,23 @@ class LookAheadFilter:
         cls.flushing_names = set()
 
     @classmethod
-    def instance(cls, name: str, window_size: int, flushing: bool, buffered: bool):
+    def instance(cls, name: str):
         obj = cls.instances.get(name)
         if obj is None:
-            obj = cls(name, window_size, flushing, buffered)
+            obj = cls(name)
             cls.instances[name] = obj
         return obj
 
-    def __init__(self, name: str, window_size: int, flushing: bool, buffered: bool) -> None:
+    def __init__(self, name: str) -> None:
+        self._name = name
+        self.log = logging.getLogger(name)
+        self._configured = False
+
+    @property
+    def configured(self) -> bool:
+        return self._configured
+
+    def configure(self, window_size: int, flushing: bool, buffered: bool) -> None:
         if (window_size % 2) != 1:
             raise ValueError(
                 "%s: window_size should be an odd number, not %d",
@@ -86,11 +103,11 @@ class LookAheadFilter:
         self._middle = window_size // 2
         self._fifo = deque(maxlen=window_size)
         self._flushing = flushing
-        self._name = name
-        self.log = logging.getLogger(name)
+        self._configured = True
         # some filters may start in flushing state
         if flushing:
-            LookAheadFilter.flushing_names.add(name)
+            LookAheadFilter.flushing_names.add(self._name)
+
 
     def __len__(self) -> int:
         return len(self._fifo)

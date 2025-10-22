@@ -14,7 +14,10 @@ def iterator1(stars1) -> Iterator[List[ReadingInfo1c]]:
 
 
 def test_subsampler(iterator1, stars1):
-    s1 = Sampler(name="stars1", divisor=3)
+    s1 = Sampler(name="stars1")
+    assert not s1.configured
+    s1.configure(divisor=3)
+    assert s1.configured
     value = s1.push_pop(next(iterator1))
     assert value is stars1[0]
     value = s1.push_pop(next(iterator1))
@@ -36,7 +39,10 @@ def test_subsampler(iterator1, stars1):
 
 
 def test_subsampler_change(iterator1, stars1):
-    s1 = Sampler(name="stars1", divisor=3)
+    s1 = Sampler(name="stars1")
+    assert not s1.configured
+    s1.configure(divisor=3)
+    assert s1.configured
     value = s1.push_pop(next(iterator1))
     assert value is stars1[0]
     value = s1.push_pop(next(iterator1))

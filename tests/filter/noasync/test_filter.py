@@ -58,17 +58,21 @@ def refill(
 
 
 def test_unique():
-    filt = LookAheadFilter.instance("stars1", 7, False, True)
+    filt = LookAheadFilter.instance("stars1")
+    assert not filt.configured
     assert LookAheadFilter.instances == {"stars1": filt}
-    filt = LookAheadFilter.instance("stars1", 7, False, True)
+    filt = LookAheadFilter.instance("stars1")
     assert LookAheadFilter.instances == {"stars1": filt}
+    assert not filt.configured
 
 
 def test_several():
-    filt1 = LookAheadFilter.instance("stars1", 7, False, True)
+    filt1 = LookAheadFilter.instance("stars1")
+    assert not filt1.configured
     assert LookAheadFilter.instances == {"stars1": filt1}
-    filt2 = LookAheadFilter.instance("stars2", 7, False, True)
+    filt2 = LookAheadFilter.instance("stars2")
     assert LookAheadFilter.instances == {"stars1": filt1, "stars2": filt2}
+    assert not filt2.configured
 
 
 @pytest.fixture()
@@ -83,14 +87,16 @@ window_sizes = [7]
 @pytest.fixture(params=window_sizes)
 def ord_filter_empty(request) -> LookAheadFilter:
     LookAheadFilter.reset()
-    filt = LookAheadFilter.instance("stars1", window_size=request.param, flushing=False, buffered=True)
+    filt = LookAheadFilter.instance("stars1")
+    filt.configure(window_size=request.param, flushing=False, buffered=True)
     return filt
 
 
 @pytest.fixture(params=window_sizes)
 def flsh_filter_empty(request) -> LookAheadFilter:
     LookAheadFilter.reset()
-    filt = LookAheadFilter.instance("stars1", window_size=request.param, flushing=True, buffered=True)
+    filt = LookAheadFilter.instance("stars1")
+    filt.configure(window_size=request.param, flushing=True, buffered=True)
     return filt
 
 
