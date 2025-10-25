@@ -505,12 +505,11 @@ def test_fix_registry(database, stars8000):
             name=stars8000.name,
             valid_since=datetime(2020, 4, 27, 12, 30, 00)
         )
-    with database.begin():
         mapping = name_mapping_lookup_current(session=database, name=stars8000.name)
         photometer = photometer_lookup_current(session=database, candidate=stars8000)
     assert mapping.valid_since == datetime(2020, 4, 27, 12, 30, 00)
     assert mapping.valid_until == datetime(2999,12, 31, 23, 59, 59)
     assert mapping.valid_state == ValidState.CURRENT
-    assert photometer.valid_since == datetime(2025,9, 10, 12, 00, 00)
+    assert photometer.valid_since == datetime(2020, 4, 27, 12, 30, 00)
     assert photometer.valid_until == datetime(2999,12, 31, 23, 59, 59)
     assert photometer.valid_state == ValidState.CURRENT

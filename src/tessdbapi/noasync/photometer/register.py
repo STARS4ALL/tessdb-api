@@ -33,7 +33,6 @@ from tessdbdao.noasync import (
     Tess,
     TessReadings,
     Tess4cReadings,
-    NameMapping,
 )
 
 # --------------
@@ -707,20 +706,14 @@ def photometer_assign(
 # =======================================
 
 
-def name_mapping_lookup(session: Session, name: str) -> Optional[NameMapping]:
-    query = select(NameMapping).where(
-        func.lower(NameMapping.name) == name.lower(),
-    )
-    return session.scalars(query).all()
-
-
 def photometer_fix_valid_since(
     session: Session, name: Stars4AllName, valid_since: datetime
 ) -> None:
     """
     Modifies the start date to incorporate older samples to an already registered photometer.
     """
-    mapping = name_mapping_lookup(session, name)
+    query = select(NameMapping).where(NameMapping.name == name)
+    mapping = session.scalars(query).all()
     if len(mapping) == 0:
         log.warning("Photometer %s not registered", name)
     elif len(mapping) > 1:
@@ -728,21 +721,11 @@ def photometer_fix_valid_since(
         raise RuntimeError(f"Photometer {name} with multiple entries")
     mapping = mapping[0]
     old_valid_since = mapping.valid_since
-    mac_address = mapping.mac_address
-    stmt = (
-        update(NameMapping)
-        .where(func.lower(NameMapping.name) == name.lower())
-        .values(valid_since=valid_since)
-    )
-    log.info(stmt)
+    stmt = update(NameMapping).where(NameMapping.name == name).values(valid_since=valid_since)
     session.execute(stmt)
     stmt = (
         update(Tess)
-        .where(func.lower(Tess.mac_address) == mac_address.lower(),
-            Tess.valid_since == old_valid_since)
+        .where(Tess.mac_address == mapping.mac_address, Tess.valid_since == old_valid_since)
         .values(valid_since=valid_since)
     )
-    log.info(stmt)
     session.execute(stmt)
-
-

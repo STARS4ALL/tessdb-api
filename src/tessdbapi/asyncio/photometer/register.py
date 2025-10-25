@@ -32,7 +32,7 @@ from tessdbdao.asyncio import Location, Observer, NameMapping, Tess, TessReading
 # -------------
 
 from ...util import Session, async_lru_cache
-from ...model import PhotometerInfo, INFINITE_T, LogSpace
+from ...model import PhotometerInfo, INFINITE_T, LogSpace, Stars4AllName
 
 ZP_EPS = 0.005
 FREQ_EPS = 0.001
@@ -686,3 +686,33 @@ async def photometer_assign(
         await session.rollback()
     elif update_readings:
         await session.execute(stmt)
+
+
+# =======================================
+# PATCHING ALREADY REGSITERED PHOTOMETERS
+# =======================================
+
+
+async def photometer_fix_valid_since(
+    session: Session, name: Stars4AllName, valid_since: datetime
+) -> None:
+    """
+    Modifies the start date to incorporate older samples to an already registered photometer.
+    """
+    query = select(NameMapping).where(NameMapping.name == name)
+    mapping = (await session.scalars(query)).all()
+    if len(mapping) == 0:
+        log.warning("Photometer %s not registered", name)
+    elif len(mapping) > 1:
+        log.error("Photometer %s with multiple entries", name)
+        raise RuntimeError(f"Photometer {name} with multiple entries")
+    mapping = mapping[0]
+    old_valid_since = mapping.valid_since
+    stmt = update(NameMapping).where(NameMapping.name == name).values(valid_since=valid_since)
+    await session.execute(stmt)
+    stmt = (
+        update(Tess)
+        .where(Tess.mac_address == mapping.mac_address, Tess.valid_since == old_valid_since)
+        .values(valid_since=valid_since)
+    )
+    await session.execute(stmt)
