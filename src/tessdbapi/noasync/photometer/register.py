@@ -26,14 +26,22 @@ from tessdbdao import (
     ValidState,
 )
 
-from tessdbdao.noasync import Location, Observer, NameMapping, Tess, TessReadings, Tess4cReadings
+from tessdbdao.noasync import (
+    Location,
+    Observer,
+    NameMapping,
+    Tess,
+    TessReadings,
+    Tess4cReadings,
+    NameMapping,
+)
 
 # --------------
 # local imports
 # -------------
 
 from ...util import Session
-from ...model import PhotometerInfo, INFINITE_T, LogSpace
+from ...model import PhotometerInfo, INFINITE_T, LogSpace, Stars4AllName
 
 
 @dataclass(slots=True)
@@ -69,6 +77,7 @@ class Stats:
                 self.num_zp_changed,
             ],
         )
+
 
 # ----------------
 # Global variables
@@ -691,3 +700,49 @@ def photometer_assign(
         session.rollback()
     elif update_readings:
         session.execute(stmt)
+
+
+# =======================================
+# PATCHING ALREADY REGSITERED PHOTOMETERS
+# =======================================
+
+
+def name_mapping_lookup(session: Session, name: str) -> Optional[NameMapping]:
+    query = select(NameMapping).where(
+        func.lower(NameMapping.name) == name.lower(),
+    )
+    return session.scalars(query).all()
+
+
+def photometer_fix_valid_since(
+    session: Session, name: Stars4AllName, valid_since: datetime
+) -> None:
+    """
+    Modifies the start date to incorporate older samples to an already registered photometer.
+    """
+    mapping = name_mapping_lookup(session, name)
+    if len(mapping) == 0:
+        log.warning("Photometer %s not registered", name)
+    elif len(mapping) > 1:
+        log.error("Photometer %s with multiple entries", name)
+        raise RuntimeError(f"Photometer {name} with multiple entries")
+    mapping = mapping[0]
+    old_valid_since = mapping.valid_since
+    mac_address = mapping.mac_address
+    stmt = (
+        update(NameMapping)
+        .where(func.lower(NameMapping.name) == name.lower())
+        .values(valid_since=valid_since)
+    )
+    log.info(stmt)
+    session.execute(stmt)
+    stmt = (
+        update(Tess)
+        .where(func.lower(Tess.mac_address) == mac_address.lower(),
+            Tess.valid_since == old_valid_since)
+        .values(valid_since=valid_since)
+    )
+    log.info(stmt)
+    session.execute(stmt)
+
+

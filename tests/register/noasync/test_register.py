@@ -10,7 +10,7 @@ from lica.sqlalchemy import sqa_logging
 
 from tessdbdao import ObserverType, ValidState, RegisterState
 
-from tessdbdao.noasync import Tess
+from tessdbdao.noasync import Tess, NameMapping
 
 from tessdbapi.model import PhotometerInfo
 from tessdbapi.noasync.photometer.register import (
@@ -18,6 +18,7 @@ from tessdbapi.noasync.photometer.register import (
     location_id_lookup,
     photometer_register,
     photometer_assign,
+    photometer_fix_valid_since,
 )
 
 from tessdbapi.noasync.observer import observer_create
@@ -34,6 +35,12 @@ log = logging.getLogger(__name__.split(".")[-1])
 # helper functions for test cases
 # -------------------------------
 
+def name_mapping_lookup_current(session: Session, name: str) -> Optional[NameMapping]:
+    query = select(NameMapping).where(
+        func.lower(NameMapping.name) == name.lower(),
+        NameMapping.valid_state == ValidState.CURRENT,
+    )
+    return session.scalars(query).one_or_none()
 
 def photometer_lookup_current(session: Session, candidate: PhotometerInfo) -> Optional[Tess]:
     query = select(Tess).where(
@@ -476,3 +483,34 @@ def test_assign_range(database, stars8000, melrose, ucm_full):
         photometer = photometer_lookup_current(session=database, candidate=stars8000)
         assert photometer.location_id != -1
         assert photometer.observer_id != -1
+
+
+def test_fix_registry(database, stars8000):
+    with database.begin():
+        photometer_register(
+            session=database,
+            candidate=stars8000,
+        )
+        mapping = name_mapping_lookup_current(session=database, name=stars8000.name)
+        photometer = photometer_lookup_current(session=database, candidate=stars8000)
+    assert mapping.valid_since == datetime(2025,9, 10, 12, 00, 00)
+    assert mapping.valid_until == datetime(2999,12, 31, 23, 59, 59)
+    assert mapping.valid_state == ValidState.CURRENT
+    assert photometer.valid_since == datetime(2025,9, 10, 12, 00, 00)
+    assert photometer.valid_until == datetime(2999,12, 31, 23, 59, 59)
+    assert photometer.valid_state == ValidState.CURRENT
+    with database.begin():
+        photometer_fix_valid_since(
+            session=database,
+            name=stars8000.name,
+            valid_since=datetime(2020, 4, 27, 12, 30, 00)
+        )
+    with database.begin():
+        mapping = name_mapping_lookup_current(session=database, name=stars8000.name)
+        photometer = photometer_lookup_current(session=database, candidate=stars8000)
+    assert mapping.valid_since == datetime(2020, 4, 27, 12, 30, 00)
+    assert mapping.valid_until == datetime(2999,12, 31, 23, 59, 59)
+    assert mapping.valid_state == ValidState.CURRENT
+    assert photometer.valid_since == datetime(2025,9, 10, 12, 00, 00)
+    assert photometer.valid_until == datetime(2999,12, 31, 23, 59, 59)
+    assert photometer.valid_state == ValidState.CURRENT
