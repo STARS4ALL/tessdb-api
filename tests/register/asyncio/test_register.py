@@ -27,6 +27,7 @@ from tessdbapi.asyncio.photometer.register import (
 
 from tessdbapi.asyncio.observer import observer_create
 from tessdbapi.asyncio.location import location_create
+from tessdbapi.exceptions import DuplicatedNameError, MissingNameError
 
 log = logging.getLogger(__name__.split(".")[-1])
 
@@ -517,3 +518,25 @@ async def test_fix_registry(database, stars8000):
     assert photometer.valid_since == datetime(2020, 4, 27, 12, 30, 00)
     assert photometer.valid_until == datetime(2999,12, 31, 23, 59, 59)
     assert photometer.valid_state == ValidState.CURRENT
+
+@pytest.mark.asyncio
+async def test_fix_registry_fail_missing(database):
+    with pytest.raises(MissingNameError):
+        async with database.begin():
+            await photometer_fix_valid_since(
+                session=database, name="stars8000", valid_since=datetime(2020, 4, 27, 12, 30, 00)
+            )
+
+@pytest.mark.asyncio
+async def test_fix_registry_fail_dup(database, stars8000, stars8000rep):
+    async with database.begin():
+        for photinfo in [stars8000, stars8000rep]:
+            await photometer_register(
+                session=database,
+                candidate=photinfo,
+            )
+    with pytest.raises(DuplicatedNameError):
+        async with database.begin():
+            await photometer_fix_valid_since(
+                session=database, name="stars8000", valid_since=datetime(2020, 4, 27, 12, 30, 00)
+            )

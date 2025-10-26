@@ -40,6 +40,7 @@ from tessdbdao.noasync import (
 # -------------
 
 from ...util import Session
+from ...exceptions import DuplicatedNameError, MissingNameError
 from ...model import PhotometerInfo, INFINITE_T, LogSpace, Stars4AllName
 
 
@@ -714,11 +715,11 @@ def photometer_fix_valid_since(
     """
     query = select(NameMapping).where(NameMapping.name == name)
     mapping = session.scalars(query).all()
-    if len(mapping) == 0:
-        log.warning("Photometer %s not registered", name)
-    elif len(mapping) > 1:
-        log.error("Photometer %s with multiple entries", name)
-        raise RuntimeError(f"Photometer {name} with multiple entries")
+    N = len(mapping)
+    if N == 0:
+        raise MissingNameError(name)
+    elif N > 1:
+        raise DuplicatedNameError(name, N)
     mapping = mapping[0]
     old_valid_since = mapping.valid_since
     stmt = update(NameMapping).where(NameMapping.name == name).values(valid_since=valid_since)
