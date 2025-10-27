@@ -695,7 +695,7 @@ async def photometer_assign(
 
 
 async def photometer_fix_valid_since(
-    session: Session, name: Stars4AllName, valid_since: datetime
+    session: Session, name: Stars4AllName, valid_since: datetime, dry_run: bool = False
 ) -> None:
     """
     Modifies the start date to incorporate older samples to an already registered photometer.
@@ -717,3 +717,6 @@ async def photometer_fix_valid_since(
         .values(valid_since=valid_since)
     )
     await session.execute(stmt)
+    if dry_run:
+        log.warning("Dry run mode. Database not written")
+        await session.rollback()
